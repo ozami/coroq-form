@@ -34,10 +34,13 @@ class Input {
     if ($this->read_only) {
       return $this;
     }
+    $old_value = $this->value;
     $this->value = $this->filter($value);
     $this->setError(null);
-    foreach ($this->observers as $observer) {
-      call_user_func($observer, $this->getValue(), $this);
+    if ($this->value !== $old_value) {
+      foreach ($this->observers as $observer) {
+        call_user_func($observer, $this);
+      }
     }
     return $this;
   }
