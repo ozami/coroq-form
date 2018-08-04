@@ -35,7 +35,7 @@ class Form {
    */
   public function getItemIn($path) {
     if (!is_array($path)) {
-      $path = explode($this->options["separator"], $path);
+      $path = explode($this->options["path_separator"], $path);
     }
     $item = $this;
     foreach ($path as $node) {
