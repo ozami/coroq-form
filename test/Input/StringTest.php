@@ -34,4 +34,12 @@ class StringTest extends PHPUnit_Framework_TestCase {
     $input->validate();
     $this->assertSame("err_invalid", $input->getError()->code);
   }
+
+  public function testValidate() {
+    $input = (new String())->setPattern("#^[0-9]{10}+$#");
+    $input->setValue("0")->validate();
+    $this->assertSame("err_invalid", $input->getError()->code);
+    $input->setValue("0123456789")->validate();
+    $this->assertSame(null, $input->getError());
+  }
 }
