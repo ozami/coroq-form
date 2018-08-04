@@ -26,7 +26,7 @@ class Date extends String {
    */
   public function doValidate($value) {
     if (strtotime($value) === false) {
-      return "err_invalid_date";
+      return "err_invalid";
     }
     return parent::doValidate($value);
   }

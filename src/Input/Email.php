@@ -13,7 +13,7 @@ class Email extends String {
    */
   public function doValidate($value) {
     if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
-      return "err_invalid_email";
+      return "err_invalid";
     }
     return parent::doValidate($value);
   }

@@ -15,7 +15,7 @@ class Url extends String {
    */
   public function doValidate($value) {
     if (!filter_var($value, FILTER_VALIDATE_URL)) {
-      return "err_invalid_url";
+      return "err_invalid";
     }
     if ($this->schemes && !in_array(parse_url($value, PHP_URL_SCHEME), $this->schemes)) {
       return "err_invalid_url_scheme";
