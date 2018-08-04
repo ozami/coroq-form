@@ -120,6 +120,10 @@ class String extends \Coroq\Input {
     return $this;
   }
 
+  /**
+   * @param mixed $value
+   * @return mixed
+   */
   public function filter($value) {
     $value = "$value";
     if ($this->mb !== null) {
@@ -138,16 +142,16 @@ class String extends \Coroq\Input {
     }
     if ($this->no_control) {
       // 0x00-0x1f, 0x7f and 0x00a0 (no-break space, which is 0xc2a0 in UTF-8) except CR and LF
-      $value = preg_replace("/[\\x00-\\x09\\x0B\\x0c\\x0e-\\x1f\\x7f\\x{00a0}]/u", " ", $value);
+      $value = preg_replace("/[\\x00-\\x09\\x0B\\x0c\\x0e-\\x1f\\x7f\\xa0]/u", " ", $value);
     }
     if ($this->no_space) {
-      $value = preg_replace("/[[:space:]\\x{00a0}　]/u", "", $value);
+      $value = preg_replace("/[[:space:]\\00\\xa0　]/u", "", $value);
     }
     if ($this->trim == self::LEFT || $this->trim == self::BOTH) {
-      $value = preg_replace("/^[[:space:]\\x{00a0}　]+/u", "", $value);
+      $value = preg_replace("/^[[:space:]\\00\\xa0　]+/u", "", $value);
     }
     if ($this->trim == self::RIGHT || $this->trim == self::BOTH) {
-      $value = preg_replace("/[[:space:]\\x{00a0}　]+$/u", "", $value);
+      $value = preg_replace("/[[:space:]\\00\\xa0　]+$/u", "", $value);
     }
     return $value;
   }
