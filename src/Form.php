@@ -203,4 +203,11 @@ class Form {
     }
     return array_diff($errs, [null]);
   }
+
+  /**
+   * @return array
+   */
+  public function getOptions() {
+    return $this->options;
+  }
 }
