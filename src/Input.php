@@ -134,6 +134,13 @@ class Input {
   /**
    * @return bool
    */
+  public function hasError() {
+    return $this->getError() !== null;
+  }
+
+  /**
+   * @return bool
+   */
   public function validate() {
     $this->setError(null);
     if ($this->isEmpty()) {
@@ -147,7 +154,7 @@ class Input {
         $this->setError(new Error($error, $this));
       }
     }
-    return !$this->getError();
+    return !$this->hasError();
   }
 
   /**

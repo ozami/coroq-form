@@ -190,7 +190,7 @@ class Form {
     foreach ($this->getEnabledItems() as $item) {
       $item->validate();
     }
-    return !$this->getError();
+    return !$this->hasError();
   }
 
   /**
@@ -201,7 +201,19 @@ class Form {
     foreach ($this->getEnabledItems() as $i => $item) {
       $errs[$i] = $item->getError();
     }
-    return array_diff($errs, [null]);
+    return $errs;
+  }
+
+  /**
+   * @return bool
+   */
+  public function hasError() {
+    foreach ($this->getEnabledItems() as $item) {
+      if ($item->hasError()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
