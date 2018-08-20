@@ -12,6 +12,6 @@ class EmailTest extends PHPUnit_Framework_TestCase {
     $input->setValue("valid@example.com")->validate();
     $this->assertNull($input->getError());
     $input->setValue("invalid..@example.com")->validate();
-    $this->assertSame("err_invalid_email", $input->getError()->code);
+    $this->assertSame("err_invalid", $input->getError()->code);
   }
 }
