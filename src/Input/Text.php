@@ -1,7 +1,7 @@
 <?php
 namespace Coroq\Input;
 
-class String extends \Coroq\Input {
+class Text extends \Coroq\Input {
   const UPPER = MB_CASE_UPPER;
   const LOWER = MB_CASE_LOWER;
   const TITLE = MB_CASE_TITLE;
@@ -32,7 +32,7 @@ class String extends \Coroq\Input {
 
   /**
    * @param string|null $mb
-   * @return \Coroq\Input\String
+   * @return \Coroq\Input\Text
    */
   public function setMb($mb) {
     $this->mb = $mb;
@@ -41,7 +41,7 @@ class String extends \Coroq\Input {
   
   /**
    * @param int|null $case
-   * @return \Coroq\Input\String
+   * @return \Coroq\Input\Text
    */
   public function setCase($case) {
     $this->case = $case;
@@ -50,7 +50,7 @@ class String extends \Coroq\Input {
 
   /**
    * @param bool $multiline
-   * @return \Coroq\Input\String
+   * @return \Coroq\Input\Text
    */
   public function setMultiline($multiline) {
     $this->multiline = $multiline;
@@ -59,7 +59,7 @@ class String extends \Coroq\Input {
 
   /**
    * @param bool $no_space
-   * @return \Coroq\Input\String
+   * @return \Coroq\Input\Text
    */
   public function setNoSpace($no_space) {
     $this->no_space = $no_space;
@@ -68,7 +68,7 @@ class String extends \Coroq\Input {
 
   /**
    * @param bool $no_control
-   * @return \Coroq\Input\String
+   * @return \Coroq\Input\Text
    */
   public function setNoControl($no_control) {
     $this->no_control = $no_control;
@@ -77,7 +77,7 @@ class String extends \Coroq\Input {
 
   /**
    * @param string|null $eol
-   * @return \Coroq\Input\String
+   * @return \Coroq\Input\Text
    */
   public function setEol($eol) {
     $this->eol = $eol;
@@ -86,7 +86,7 @@ class String extends \Coroq\Input {
 
   /**
    * @param string|null $trim
-   * @return \Coroq\Input\String
+   * @return \Coroq\Input\Text
    */
   public function setTrim($trim) {
     $this->trim = $trim;
@@ -95,7 +95,7 @@ class String extends \Coroq\Input {
 
   /**
    * @param int $min_length
-   * @return \Coroq\Input\String
+   * @return \Coroq\Input\Text
    */
   public function setMinLength($min_length) {
     $this->min_length = $min_length;
@@ -111,7 +111,7 @@ class String extends \Coroq\Input {
 
   /**
    * @param int $max_length
-   * @return \Coroq\Input\String
+   * @return \Coroq\Input\Text
    */
   public function setMaxLength($max_length) {
     $this->max_length = $max_length;
@@ -120,7 +120,7 @@ class String extends \Coroq\Input {
 
   /**
    * @param string|null $pattern
-   * @return \Coroq\Input\String
+   * @return \Coroq\Input\Text
    */
   public function setPattern($pattern) {
     $this->pattern = $pattern;

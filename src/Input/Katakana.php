@@ -1,7 +1,7 @@
 <?php
 namespace Coroq\Input;
 
-class Katakana extends String {
+class Katakana extends Text {
   public function __construct() {
     parent::__construct();
     $this->setMb("CKV");

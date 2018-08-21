@@ -1,7 +1,7 @@
 <?php
 namespace Coroq\Input;
 
-class Url extends String {
+class Url extends Text {
   protected $schemes = ["http", "https"]; // lower case only
 
   public function __construct() {

@@ -1,7 +1,7 @@
 <?php
 namespace Coroq\Input;
 
-class Date extends String {
+class Date extends Text {
   public function __construct() {
     parent::__construct();
     $this->setMb("as");
