@@ -49,7 +49,7 @@ class Input {
    * @return bool
    */
   public function isEmpty() {
-    return $this->getValue() === "";
+    return $this->getValue() . "" == "";
   }
 
   /**
