@@ -103,6 +103,13 @@ class String extends \Coroq\Input {
   }
 
   /**
+   * @return int
+   */
+  public function getMaxLength() {
+    return $this->max_length;
+  }
+
+  /**
    * @param int $max_length
    * @return \Coroq\Input\String
    */
