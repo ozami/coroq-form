@@ -1,7 +1,7 @@
 <?php
 namespace Coroq\Input;
 
-class Int extends Number {
+class Integer extends Number {
   /**
    * @param mixed $value
    * @return string|null
