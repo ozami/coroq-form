@@ -45,7 +45,7 @@ class Select extends \Coroq\Input {
   public function doValidate($value) {
     $options = $this->getOptions();
     if (!isset($options[$value])) {
-      return "err_not_in_options";
+      return "err_invalid";
     }
   }
 }

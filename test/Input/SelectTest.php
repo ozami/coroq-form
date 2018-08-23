@@ -12,6 +12,6 @@ class SelectTest extends PHPUnit_Framework_TestCase {
     $input->setValue("a")->validate();
     $this->assertSame(null, $input->getError());
     $input->setValue("c")->validate();
-    $this->assertSame("err_not_in_options", $input->getError()->code);
+    $this->assertSame("err_invalid", $input->getError()->code);
   }
 }

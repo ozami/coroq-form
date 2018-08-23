@@ -59,7 +59,7 @@ class MultiSelect extends \Coroq\Input {
     $options = $this->getOptions();
     foreach ($value as $v) {
       if (!isset($options[$v])) {
-        return "err_not_in_options";
+        return "err_invalid";
       }
     }
     $count = count($value);
