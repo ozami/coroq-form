@@ -1,6 +1,6 @@
 <?php
 namespace Coroq;
-use \Coroq\Input\Error;
+use Coroq\Input\Error;
 
 class Input {
   /** @var mixed */
