@@ -94,6 +94,13 @@ class Text extends \Coroq\Input {
   }
 
   /**
+   * @return int
+   */
+  public function getMinLength() {
+    return $this->min_length;
+  }
+
+  /**
    * @param int $min_length
    * @return \Coroq\Input\Text
    */
