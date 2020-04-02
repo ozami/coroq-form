@@ -28,7 +28,7 @@ class Input {
 
   /**
    * @param mixed $value
-   * @return Input
+   * @return $this
    */
   public function setValue($value) {
     if ($this->read_only) {
@@ -53,7 +53,7 @@ class Input {
   }
 
   /**
-   * @return Input
+   * @return $this
    */
   public function clear() {
     $this->setValue("");
@@ -69,7 +69,7 @@ class Input {
 
   /**
    * @param bool $required
-   * @return Input
+   * @return $this
    */
   public function setRequired($required) {
     $this->required = (bool)$required;
@@ -85,7 +85,7 @@ class Input {
 
   /**
    * @param bool $read_only
-   * @return Input
+   * @return $this
    */
   public function setReadOnly($read_only) {
     $this->read_only = (bool)$read_only;
@@ -101,7 +101,7 @@ class Input {
 
   /**
    * @param bool $disabled
-   * @return Input
+   * @return $this
    */
   public function disable($disabled = true) {
     $this->disabled = (bool)$disabled;
@@ -109,7 +109,7 @@ class Input {
   }
 
   /**
-   * @return Input
+   * @return $this
    */
   public function enable() {
     return $this->disable(false);
@@ -124,7 +124,7 @@ class Input {
 
   /**
    * @param Error|null $error
-   * @return Input
+   * @return $this
    */
   public function setError($error) {
     $this->error = $error;
@@ -175,7 +175,7 @@ class Input {
 
   /**
    * @param callable $observer
-   * @return Input
+   * @return $this
    */
   public function addObserver($observer) {
     $this->observers[] = $observer;

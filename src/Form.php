@@ -110,7 +110,7 @@ class Form {
 
   /**
    * @param array $value
-   * @return Form
+   * @return $this
    */
   public function setValue($value) {
     foreach ($this->items as $i => $item) {
@@ -120,7 +120,7 @@ class Form {
   }
 
   /**
-   * @return Form
+   * @return $this
    */
   public function clear() {
     foreach ($this->items as $item) {
@@ -169,7 +169,7 @@ class Form {
 
   /**
    * @return bool $disabled
-   * @return Form
+   * @return $this
    */
   public function disable($disabled = true) {
     $this->disabled = (bool)$disabled;
@@ -177,7 +177,7 @@ class Form {
   }
 
   /**
-   * @return Form
+   * @return $this
    */
   public function enable() {
     return $this->disable(false);
