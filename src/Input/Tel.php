@@ -6,4 +6,13 @@ class Tel extends Text {
     parent::__construct();
     $this->setMb("as");
   }
+
+  /**
+   * @param mixed $value
+   * @return mixed
+   */
+  public function filter($value) {
+    $value = parent::filter($value);
+    return preg_replace('#[^0-9]#', "", $value);
+  }
 }
