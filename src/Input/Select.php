@@ -17,7 +17,10 @@ class Select extends \Coroq\Input {
    * @return Select
    */
   public function setOptions(array $options) {
-    $this->options = $options;
+    $this->options = [];
+    foreach ($options as $value => $label) {
+      $this->options["$value"] = $label;
+    }
     return $this;
   }
 
@@ -27,7 +30,7 @@ class Select extends \Coroq\Input {
    */
   public function getLabel($value) {
     $options = $this->getOptions();
-    return @$options[$value];
+    return @$options["$value"];
   }
 
   /**
@@ -36,6 +39,14 @@ class Select extends \Coroq\Input {
   public function getSelectedLabel() {
     $options = $this->getOptions();
     return @$options[$this->getValue()];
+  }
+
+  /**
+   * @param mixed $value
+   * @return mixed
+   */
+  public function filter($value) {
+    return "$value";
   }
 
   /**
