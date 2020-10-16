@@ -13,8 +13,6 @@ class Input {
   protected $disabled = false;
   /** @var Error|null */
   protected $error = null;
-  /** @var array<callable> */
-  protected $observers = [];
 
   public function __construct() {
   }
@@ -37,11 +35,6 @@ class Input {
     $old_value = $this->value;
     $this->value = $this->filter($value);
     $this->setError(null);
-    if ($this->value !== $old_value) {
-      foreach ($this->observers as $observer) {
-        call_user_func($observer, $this);
-      }
-    }
     return $this;
   }
 
@@ -171,14 +164,5 @@ class Input {
    */
   public function doValidate($value) {
     return null;
-  }
-
-  /**
-   * @param callable $observer
-   * @return $this
-   */
-  public function addObserver($observer) {
-    $this->observers[] = $observer;
-    return $this;
   }
 }

@@ -30,17 +30,4 @@ class InputTest extends PHPUnit_Framework_TestCase {
     $this->assertSame($input->validate(), true);
     $this->assertSame($input->getError(), null);
   }
-  
-  public function testObserverFunctionCalledOnlyWhenTheValueChanged() {
-    $result = null;
-    $input = new Input();
-    $input->setValue(1);
-    $input->addObserver(function($changed_input) use (&$result) {
-      $result = $changed_input;
-    });
-    $input->setValue(1);
-    $this->assertSame(null, $result);
-    $input->setValue(2);
-    $this->assertSame($input, $result);
-  }
 }
