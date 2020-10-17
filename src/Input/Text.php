@@ -32,7 +32,7 @@ class Text extends \Coroq\Input {
 
   /**
    * @param string|null $mb
-   * @return \Coroq\Input\Text
+   * @return $this
    */
   public function setMb($mb) {
     $this->mb = $mb;
@@ -41,7 +41,7 @@ class Text extends \Coroq\Input {
   
   /**
    * @param int|null $case
-   * @return \Coroq\Input\Text
+   * @return $this
    */
   public function setCase($case) {
     $this->case = $case;
@@ -50,7 +50,7 @@ class Text extends \Coroq\Input {
 
   /**
    * @param bool $multiline
-   * @return \Coroq\Input\Text
+   * @return $this
    */
   public function setMultiline($multiline) {
     $this->multiline = $multiline;
@@ -59,7 +59,7 @@ class Text extends \Coroq\Input {
 
   /**
    * @param bool $no_space
-   * @return \Coroq\Input\Text
+   * @return $this
    */
   public function setNoSpace($no_space) {
     $this->no_space = $no_space;
@@ -68,7 +68,7 @@ class Text extends \Coroq\Input {
 
   /**
    * @param bool $no_control
-   * @return \Coroq\Input\Text
+   * @return $this
    */
   public function setNoControl($no_control) {
     $this->no_control = $no_control;
@@ -77,7 +77,7 @@ class Text extends \Coroq\Input {
 
   /**
    * @param string|null $eol
-   * @return \Coroq\Input\Text
+   * @return $this
    */
   public function setEol($eol) {
     $this->eol = $eol;
@@ -86,7 +86,7 @@ class Text extends \Coroq\Input {
 
   /**
    * @param string|null $trim
-   * @return \Coroq\Input\Text
+   * @return $this
    */
   public function setTrim($trim) {
     $this->trim = $trim;
@@ -102,7 +102,7 @@ class Text extends \Coroq\Input {
 
   /**
    * @param int $min_length
-   * @return \Coroq\Input\Text
+   * @return $this
    */
   public function setMinLength($min_length) {
     $this->min_length = $min_length;
@@ -118,7 +118,7 @@ class Text extends \Coroq\Input {
 
   /**
    * @param int $max_length
-   * @return \Coroq\Input\Text
+   * @return $this
    */
   public function setMaxLength($max_length) {
     $this->max_length = $max_length;
@@ -127,7 +127,7 @@ class Text extends \Coroq\Input {
 
   /**
    * @param string|null $pattern
-   * @return \Coroq\Input\Text
+   * @return $this
    */
   public function setPattern($pattern) {
     $this->pattern = $pattern;
@@ -136,7 +136,7 @@ class Text extends \Coroq\Input {
 
   /**
    * @param mixed $value
-   * @return mixed
+   * @return string
    */
   public function filter($value) {
     $value = "$value";

@@ -29,7 +29,7 @@ class Number extends \Coroq\Input {
 
   /**
    * @param mixed $value
-   * @return mixed
+   * @return string
    */
   public function filter($value) {
     $value = parent::filter($value);
