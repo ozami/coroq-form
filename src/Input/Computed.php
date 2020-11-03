@@ -35,6 +35,18 @@ abstract class Computed extends \Coroq\Input {
   }
 
   /**
+   * @return bool
+   */
+  public function validate() {
+    foreach ($this->source_inputs as $source_input) {
+      if (!$source_input->validate()) {
+        return false;
+      }
+    }
+    return parent::validate();
+  }
+
+  /**
    * @param array $source_values values of source inputs in order of the source inputs added.
    * @return mixed
    */
