@@ -13,6 +13,10 @@ class Input {
   protected $disabled = false;
   /** @var Error|null */
   protected $error = null;
+  /** @var callable|null */
+  protected $error_stringifier;
+  /** @var callable|null */
+  protected static $default_error_stringifier = '\Coroq\Input::basicErrorStringifier';
 
   public function __construct() {
   }
@@ -132,6 +136,33 @@ class Input {
   }
 
   /**
+   * @return string|null
+   */
+  public function getErrorString() {
+    $error = $this->getError();
+    if ($error === null) {
+      return null;
+    }
+    $error_string = $error->code;
+    if (static::$default_error_stringifier) {
+      $error_string = call_user_func(static::$default_error_stringifier, $error) ?: $error_string;
+    }
+    if ($this->error_stringifier) {
+      $error_string = call_user_func($this->error_stringifier, $error) ?: $error_string;
+    }
+    return $error_string;
+  }
+
+  /**
+   * @param callable|null $error_stringifier
+   * @return $this
+   */
+  public function setErrorStringifier(callable $error_stringifier = null) {
+    $this->error_stringifier = $error_stringifier;
+    return $this;
+  }
+
+  /**
    * @return bool
    */
   public function validate() {
@@ -144,7 +175,10 @@ class Input {
     else {
       $error = $this->doValidate($this->getValue());
       if ($error) {
-        $this->setError(new Error($error, $this));
+        if (!($error instanceof Error)) {
+          $error = new Error($error, $this);
+        }
+        $this->setError($error);
       }
     }
     return !$this->hasError();
@@ -160,9 +194,37 @@ class Input {
 
   /**
    * @param mixed $value
-   * @return string|null
+   * @return Error|string|null
    */
   public function doValidate($value) {
     return null;
+  }
+
+  public static function setDefaultErrorStringifier(callable $error_stringifier) {
+    static::$default_error_stringifier = $error_stringifier;
+  }
+
+  public static function basicErrorStringifier(Error $error) {
+    $error_string_templates = [
+      "err_empty" => function($error) {
+        if ($error->input instanceof \Coroq\Input\Select || $error->input instanceof \Coroq\Input\MultiSelect) {
+          return "選択してください";
+        }
+        return "入力してください";
+      },
+      "err_invalid" => "正しく入力してください",
+      "err_not_katakana" => "カタカナで入力してください",
+      "err_too_short" => function($error) {
+        return $error->input->getMinLength() . " 文字以上で入力してください";
+      },
+      "err_too_long" => function($error) {
+        return $error->input->getMaxLength() . " 文字以内で入力してください";
+      },
+    ];
+    $error_string = @$error_string_templates[$error->code];
+    if (is_callable($error_string)) {
+      $error_string = call_user_func($error_string, $error);
+    }
+    return $error_string;
   }
 }
