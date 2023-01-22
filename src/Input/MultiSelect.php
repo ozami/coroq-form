@@ -38,15 +38,11 @@ class MultiSelect extends \Coroq\Input {
     return $this->setValue([]);
   }
 
-  public function getLabel($value) {
-    $options = $this->getOptions();
-    return @$options[$value];
-  }
-
   public function getSelectedLabel() {
+    $options = $this->getOptions();
     $labels = [];
     foreach ($this->getValue() as $value) {
-      $labels[] = $this->getLabel($value);
+      $labels[] = @$options[$value];
     }
     return array_diff($labels, [null]);
   }

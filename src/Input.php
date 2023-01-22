@@ -11,6 +11,8 @@ class Input {
   protected $read_only = false;
   /** @var bool */
   protected $disabled = false;
+  /** @var string */
+  protected $label = "";
   /** @var Error|null */
   protected $error = null;
   /** @var callable|null */
@@ -110,6 +112,22 @@ class Input {
    */
   public function enable() {
     return $this->disable(false);
+  }
+
+  /**
+   * @return string
+   */
+  public function getLabel() {
+    return $this->label;
+  }
+
+  /**
+   * @param string $label
+   * @return $this
+   */
+  public function setLabel($label) {
+    $this->label = $label;
+    return $this;
   }
 
   /**

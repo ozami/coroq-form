@@ -25,15 +25,6 @@ class Select extends \Coroq\Input {
   }
 
   /**
-   * @param string $value
-   * @return string|null
-   */
-  public function getLabel($value) {
-    $options = $this->getOptions();
-    return @$options["$value"];
-  }
-
-  /**
    * @return string|null
    */
   public function getSelectedLabel() {
