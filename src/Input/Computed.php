@@ -1,7 +1,9 @@
 <?php
-namespace Coroq\Input;
+namespace Coroq\Form\Input;
 
-abstract class Computed extends \Coroq\Input {
+use Coroq\Form\Input;
+
+abstract class Computed extends Input {
   /** @var array */
   protected $source_inputs = [];
 
@@ -13,7 +15,7 @@ abstract class Computed extends \Coroq\Input {
   /**
    * @return $this
    */
-  public function addSourceInput(\Coroq\Input $source_input) {
+  public function addSourceInput(Input $source_input) {
     $this->source_inputs[] = $source_input;
     return $this;
   }

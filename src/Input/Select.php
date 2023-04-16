@@ -1,7 +1,9 @@
 <?php
-namespace Coroq\Input;
+namespace Coroq\Form\Input;
 
-class Select extends \Coroq\Input {
+use Coroq\Form\Input;
+
+class Select extends Input {
   /** @var array */
   protected $options = [];
 

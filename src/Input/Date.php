@@ -1,5 +1,5 @@
 <?php
-namespace Coroq\Input;
+namespace Coroq\Form\Input;
 
 class Date extends Text {
   public function __construct() {

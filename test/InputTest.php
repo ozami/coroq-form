@@ -1,7 +1,8 @@
 <?php
-use Coroq\Input;
+use Coroq\Form\Input;
+use PHPUnit\Framework\TestCase;
 
-class InputTest extends PHPUnit_Framework_TestCase {
+class InputTest extends TestCase {
   public function testReadOnly() {
     $input = (new Input())->setReadOnly(true)->setValue("test");
     $this->assertSame("", $input->getValue());

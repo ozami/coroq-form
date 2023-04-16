@@ -9,18 +9,18 @@
         }
     ],
     "require": {
-        "php": ">=5.4",
+        "php": ">=7.2",
         "lib-pcre": "*"
     },
     "require-dev": {
-        "phpunit/phpunit": "~4.8"
+        "phpunit/phpunit": "^8.5"
     },
     "autoload": {
         "psr-4": {
-            "Coroq\\": "src/"
+            "Coroq\\Form\\": "src/"
         }
     },
     "scripts": {
-        "test": "phpunit test/"
+        "test": "@php vendor/bin/phpunit test/"
     }
 }

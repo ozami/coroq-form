@@ -1,5 +1,5 @@
 <?php
-namespace Coroq\Input;
+namespace Coroq\Form\Input;
 
 class Email extends Text {
   private $lowercase_domain;

@@ -1,5 +1,5 @@
 <?php
-namespace Coroq;
+namespace Coroq\Form;
 
 class Form {
   /** @var array<Input|Form> */

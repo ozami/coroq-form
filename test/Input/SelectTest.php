@@ -1,7 +1,8 @@
 <?php
-use Coroq\Input\Select;
+use Coroq\Form\Input\Select;
+use PHPUnit\Framework\TestCase;
 
-class SelectTest extends PHPUnit_Framework_TestCase {
+class SelectTest extends TestCase {
   public function testValidate() {
     $input = (new Select())->setOptions([
       "a" => "A",

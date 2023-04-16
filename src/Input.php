@@ -1,6 +1,8 @@
 <?php
-namespace Coroq;
-use Coroq\Input\Error;
+namespace Coroq\Form;
+use Coroq\Form\Error;
+use Coroq\Form\Input\MultiSelect;
+use Coroq\Form\Input\Select;
 
 class Input {
   /** @var mixed */
@@ -225,7 +227,7 @@ class Input {
   public static function basicErrorStringifier(Error $error) {
     $error_string_templates = [
       "err_empty" => function($error) {
-        if ($error->input instanceof \Coroq\Input\Select || $error->input instanceof \Coroq\Input\MultiSelect) {
+        if ($error->input instanceof Select || $error->input instanceof MultiSelect) {
           return "選択してください";
         }
         return "入力してください";

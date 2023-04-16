@@ -1,7 +1,9 @@
 <?php
-namespace Coroq\Input;
+namespace Coroq\Form\Input;
 
-class MultiSelect extends \Coroq\Input {
+use Coroq\Form\Input;
+
+class MultiSelect extends Input {
   protected $options = [];
   protected $min_count = 0;
   protected $max_count = PHP_INT_MAX;

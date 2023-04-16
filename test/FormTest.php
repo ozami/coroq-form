@@ -1,8 +1,9 @@
 <?php
-use Coroq\Form;
-use Coroq\Input;
+use Coroq\Form\Form;
+use Coroq\Form\Input;
+use PHPUnit\Framework\TestCase;
 
-class FormTest extends PHPUnit_Framework_TestCase {
+class FormTest extends TestCase {
   public function testGetItemIn() {
     $form = new Form();
     $a = (new Input())->setValue("a");
@@ -15,10 +16,8 @@ class FormTest extends PHPUnit_Framework_TestCase {
     $this->assertSame($c, $form->getItemIn("b/c"));
   }
 
-  /**
-   * @expectedException \LogicException
-   */
   public function testGetItemThrowsExceptionIfNoItem() {
+    $this->expectException(LogicException::class);
     $form = new Form();
     $form->getItem("a");
   }

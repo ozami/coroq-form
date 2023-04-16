@@ -1,7 +1,8 @@
 <?php
-use Coroq\Input\Text;
+use Coroq\Form\Input\Text;
+use PHPUnit\Framework\TestCase;
 
-class TextTest extends PHPUnit_Framework_TestCase {
+class TextTest extends TestCase {
   public function testTrim() {
     $ws = " \t\n\r\x00\x0b\xc2\xa0　";
     $sample = "{$ws}T{$ws}T{$ws}";

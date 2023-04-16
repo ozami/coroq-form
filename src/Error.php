@@ -1,5 +1,5 @@
 <?php
-namespace Coroq\Input;
+namespace Coroq\Form;
 
 class Error {
   public $code;

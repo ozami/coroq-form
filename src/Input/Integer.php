@@ -1,5 +1,5 @@
 <?php
-namespace Coroq\Input;
+namespace Coroq\Form\Input;
 
 class Integer extends Number {
   /**

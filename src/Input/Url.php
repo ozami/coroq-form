@@ -1,5 +1,5 @@
 <?php
-namespace Coroq\Input;
+namespace Coroq\Form\Input;
 
 class Url extends Text {
   protected $schemes = ["http", "https"]; // lower case only

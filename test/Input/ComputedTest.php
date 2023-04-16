@@ -1,6 +1,7 @@
 <?php
-use Coroq\Input;
-use Coroq\Input\Computed;
+use Coroq\Form\Input;
+use Coroq\Form\Input\Computed;
+use PHPUnit\Framework\TestCase;
 
 class Sum extends Computed {
   public function computeValue(array $source_values) {
@@ -8,7 +9,7 @@ class Sum extends Computed {
   }
 }
 
-class ComputedTest extends PHPUnit_Framework_TestCase {
+class ComputedTest extends TestCase {
   public function testGetValue() {
     $input1 = new Input();
     $input1->setValue(1);

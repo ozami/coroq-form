@@ -1,7 +1,8 @@
 <?php
-use Coroq\Input\Email;
+use Coroq\Form\Input\Email;
+use PHPUnit\Framework\TestCase;
 
-class EmailTest extends PHPUnit_Framework_TestCase {
+class EmailTest extends TestCase {
   public function testFilter() {
     $input = (new Email())->setValue(" ＴＥＳＴ＠example.com ");
     $this->assertSame("TEST@example.com", $input->getValue());

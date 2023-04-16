@@ -1,5 +1,5 @@
 <?php
-namespace Coroq\Input;
+namespace Coroq\Form\Input;
 
 class Postal extends Text {
   public function __construct() {

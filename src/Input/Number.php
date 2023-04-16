@@ -1,9 +1,11 @@
 <?php
-namespace Coroq\Input;
+namespace Coroq\Form\Input;
+
+use Coroq\Form\Input;
 
 define("COROQ_INPUT_NUMERIC_MINUS_INF", -INF);
 
-class Number extends \Coroq\Input {
+class Number extends Input {
   /** @var int|float */
   protected $min = COROQ_INPUT_NUMERIC_MINUS_INF;
   /** @var int|float */

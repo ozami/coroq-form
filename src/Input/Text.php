@@ -1,7 +1,9 @@
 <?php
-namespace Coroq\Input;
+namespace Coroq\Form\Input;
 
-class Text extends \Coroq\Input {
+use Coroq\Form\Input;
+
+class Text extends Input {
   const UPPER = MB_CASE_UPPER;
   const LOWER = MB_CASE_LOWER;
   const TITLE = MB_CASE_TITLE;
