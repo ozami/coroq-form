@@ -20,7 +20,7 @@ class Input {
   /** @var callable|null */
   protected $error_stringifier;
   /** @var callable|null */
-  protected static $default_error_stringifier = '\Coroq\Input::basicErrorStringifier';
+  protected static $default_error_stringifier = [self::class, 'basicErrorStringifier'];
 
   public function __construct() {
   }
