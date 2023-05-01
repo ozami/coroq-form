@@ -119,6 +119,10 @@ class Form {
     return $this;
   }
 
+  public function getItemValue(string $name) {
+    return $this->getItem($name)->getValue();
+  }
+
   /**
    * @return $this
    */
