@@ -1,41 +1,21 @@
 <?php
+declare(strict_types=1);
 namespace Coroq\Form;
 
-class Form {
-  /** @var array<Input|Form> */
-  protected $items = [];
-  /** @var bool */
-  protected $disabled = false;
-  /** @var array */
-  protected $options = [];
+class Form implements FormItemInterface {
+  private bool $__disabled = false;
 
-  /**
-   * @param array $options
-   */
-  public function __construct($options = []) {
-    $this->options = $options + [
-      "path_separator" => "/",
-    ];
-  }
-
-  /**
-   * @param string $name
-   * @return Input|Form
-   */
-  public function getItem($name) {
-    if (!isset($this->items[$name])) {
+  public function getItem(string $name): FormItemInterface {
+    $item = $this->$name ?? null;
+    if (!($item instanceof FormItemInterface)) {
       throw new \LogicException("Item '$name' not found.");
     }
-    return $this->items[$name];
+    return $item;
   }
 
-  /**
-   * @param array|string $path
-   * @return Input|Form
-   */
-  public function getItemIn($path) {
+  public function getItemIn(string $path): FormItemInterface {
     if (!is_array($path)) {
-      $path = explode($this->options["path_separator"], $path);
+      $path = explode('/', $path);
     }
     $item = $this;
     foreach ($path as $node) {
@@ -44,100 +24,30 @@ class Form {
     return $item;
   }
 
-  /**
-   * @return array<Input|Form>
-   */
-  public function getItems() {
-    return $this->items;
-  }
-
-  /**
-   * @return array<Input|Form>
-   */
-  public function getEnabledItems() {
-    return array_filter($this->items, function($item) {
-      return !$item->isDisabled();
-    });
-  }
-
-  /**
-   * @param string $name
-   * @param Input|Form $item
-   * @return Form
-   */
-  public function setItem($name, $item) {
-    $this->items[$name] = $item;
-    return $this;
-  }
-
-  /**
-   * @param Input|Form $item
-   * @return Form
-   */
-  public function addItem($item) {
-    $this->items[] = $item;
-    return $this;
-  }
-
-  /**
-   * @param string $name
-   * @return Form
-   */
-  public function unsetItem($name) {
-    unset($this->items[$name]);
-    return $this;
-  }
-
-  /**
-   * @param array<Input|Form> $items
-   * @return Form
-   */
-  public function setItems(array $items) {
-    $this->items = $items;
-    return $this;
-  }
-
-  /**
-   * @return array
-   */
-  public function getValue() {
+  public function getValue(): array {
     $values = [];
-    foreach ($this->getEnabledItems() as $i => $item) {
-      $values[$i] = $item->getValue();
+    foreach ($this->getEnabledItems() as $name => $item) {
+      $values[$name] = $item->getValue();
     }
     return $values;
   }
 
-  /**
-   * @param array $value
-   * @return $this
-   */
-  public function setValue($value) {
-    foreach ($this->items as $i => $item) {
-      $item->setValue(@$value[$i]);
+  public function setValue(mixed $value): self {
+    foreach ($this->getEnabledItems() as $name => $item) {
+      $item->setValue($value[$name] ?? '');
     }
     return $this;
   }
 
-  public function getItemValue(string $name) {
-    return $this->getItem($name)->getValue();
-  }
-
-  /**
-   * @return $this
-   */
-  public function clear() {
-    foreach ($this->items as $item) {
+  public function clear(): self {
+    foreach ($this->getEnabledItems() as $item) {
       $item->clear();
     }
     return $this;
   }
 
-  /**
-   * @return bool
-   */
-  public function isEmpty() {
-    foreach ($this->getEnabledItems() as $i => $item) {
+  public function isEmpty(): bool {
+    foreach ($this->getEnabledItems() as $item) {
       if (!$item->isEmpty()) {
         return false;
       }
@@ -145,73 +55,47 @@ class Form {
     return true;
   }
 
-  /**
-   * @return array
-   */
-  public function getFilled() {
+  public function getFilledValue(): array {
     $values = [];
-    foreach ($this->getEnabledItems() as $i => $item) {
+    foreach ($this->getEnabledItems() as $name => $item) {
       if ($item->isEmpty()) {
         continue;
       }
       if ($item instanceof Form) {
-        $values[$i] = $item->getFilled();
+        $values[$name] = $item->getFilledValue();
       }
       else {
-        $values[$i] = $item->getValue();
+        $values[$name] = $item->getValue();
       }
     }
     return $values;
   }
 
-  /**
-   * @return bool
-   */
-  public function isDisabled() {
-    return $this->disabled;
+  public function isDisabled(): bool {
+    return $this->__disabled;
   }
 
-  /**
-   * @return bool $disabled
-   * @return $this
-   */
-  public function disable($disabled = true) {
-    $this->disabled = (bool)$disabled;
+  public function setDisabled(bool $disabled): self {
+    $this->__disabled = (bool)$disabled;
     return $this;
   }
 
-  /**
-   * @return $this
-   */
-  public function enable() {
-    return $this->disable(false);
-  }
-
-  /**
-   * @return bool
-   */
-  public function validate() {
+  public function validate(): bool {
     foreach ($this->getEnabledItems() as $item) {
       $item->validate();
     }
     return !$this->hasError();
   }
 
-  /**
-   * @return array<Input\Error|array>
-   */
-  public function getError() {
-    $errs = [];
-    foreach ($this->getEnabledItems() as $i => $item) {
-      $errs[$i] = $item->getError();
+  public function getError(): array {
+    $errors = [];
+    foreach ($this->getEnabledItems() as $name => $item) {
+      $errors[$name] = $item->getError();
     }
-    return $errs;
+    return $errors;
   }
 
-  /**
-   * @return bool
-   */
-  public function hasError() {
+  public function hasError(): bool {
     foreach ($this->getEnabledItems() as $item) {
       if ($item->hasError()) {
         return true;
@@ -221,9 +105,29 @@ class Form {
   }
 
   /**
-   * @return array
+   * @return array<FormItemInterface>
    */
-  public function getOptions() {
-    return $this->options;
+  protected function getItems(): array {
+    $vars = get_object_vars($this);
+    $items = [];
+    foreach ($vars as $name => $var) {
+      if ($var instanceof FormItemInterface) {
+        $items[$name] = $var;
+      }
+    }
+    return $items;
+  }
+
+  /**
+   * @return array<FormItemInterface>
+   */
+  protected function getEnabledItems(): array {
+    $enabledItems = [];
+    foreach ($this->getItems() as $name => $item) {
+      if (!$item->isDisabled()) {
+        $enabledItems[$name] = $item;
+      }
+    }
+    return $enabledItems;
   }
 }

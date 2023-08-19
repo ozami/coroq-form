@@ -27,16 +27,16 @@ class MultiSelect extends Input {
     return $this;
   }
   
-  public function isEmpty() {
+  public function isEmpty(): bool {
     return !$this->getValue();
   }
 
-  public function setValue($value) {
+  public function setValue($value): self {
     $value = array_diff((array)$value, ["", null]);
     return parent::setValue($value);
   }
 
-  public function clear() {
+  public function clear(): self {
     return $this->setValue([]);
   }
 

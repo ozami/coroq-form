@@ -4,7 +4,7 @@ use Coroq\Form\Error;
 use Coroq\Form\Input\MultiSelect;
 use Coroq\Form\Input\Select;
 
-class Input {
+class Input implements FormItemInterface {
   /** @var mixed */
   protected $value = "";
   /** @var bool */
@@ -28,7 +28,7 @@ class Input {
   /**
    * @return mixed
    */
-  public function getValue() {
+  public function getValue(): mixed {
     return $this->value;
   }
 
@@ -36,7 +36,7 @@ class Input {
    * @param mixed $value
    * @return $this
    */
-  public function setValue($value) {
+  public function setValue($value): self {
     if ($this->read_only) {
       return $this;
     }
@@ -49,14 +49,14 @@ class Input {
   /**
    * @return bool
    */
-  public function isEmpty() {
+  public function isEmpty(): bool {
     return $this->getValue() . "" == "";
   }
 
   /**
    * @return $this
    */
-  public function clear() {
+  public function clear(): self {
     $this->setValue("");
     return $this;
   }
@@ -93,27 +93,13 @@ class Input {
     return $this;
   }
 
-  /**
-   * @return bool
-   */
-  public function isDisabled() {
+  public function isDisabled(): bool {
     return $this->disabled;
   }
 
-  /**
-   * @param bool $disabled
-   * @return $this
-   */
-  public function disable($disabled = true) {
-    $this->disabled = (bool)$disabled;
+  public function setDisabled(bool $disabled): self {
+    $this->disabled = $disabled;
     return $this;
-  }
-
-  /**
-   * @return $this
-   */
-  public function enable() {
-    return $this->disable(false);
   }
 
   /**
@@ -135,7 +121,7 @@ class Input {
   /**
    * @return Error|null
    */
-  public function getError() {
+  public function getError(): ?Error {
     return $this->error;
   }
 
@@ -148,10 +134,7 @@ class Input {
     return $this;
   }
 
-  /**
-   * @return bool
-   */
-  public function hasError() {
+  public function hasError(): bool {
     return $this->getError() !== null;
   }
 
@@ -182,10 +165,7 @@ class Input {
     return $this;
   }
 
-  /**
-   * @return bool
-   */
-  public function validate() {
+  public function validate(): bool {
     $this->setError(null);
     if ($this->isEmpty()) {
       if ($this->isRequired()) {

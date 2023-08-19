@@ -6,14 +6,12 @@ use PHPUnit\Framework\TestCase;
 class FormTest extends TestCase {
   public function testGetItemIn() {
     $form = new Form();
-    $a = (new Input())->setValue("a");
-    $form->setItem("a", $a);
-    $c = (new Input())->setValue("c");
-    $b = (new Form())->setItem("c", $c);
-    $form->setItem("b", $b);
-    $this->assertSame($a, $form->getItemIn("a"));
-    $this->assertSame($b, $form->getItemIn("b"));
-    $this->assertSame($c, $form->getItemIn("b/c"));
+    $form->a = (new Input())->setValue("a");
+    $form->b = new Form();
+    $form->b->c = (new Input())->setValue("c");
+    $this->assertSame($form->a, $form->getItemIn("a"));
+    $this->assertSame($form->b, $form->getItemIn("b"));
+    $this->assertSame($form->b->c, $form->getItemIn("b/c"));
   }
 
   public function testGetItemThrowsExceptionIfNoItem() {
@@ -24,18 +22,18 @@ class FormTest extends TestCase {
   
   public function testGetValueCollectsValuesOnlyFromEnabledItems() {
     $form = new Form();
-    $form->setItem("a", (new Input())->setValue("a"));
-    $form->setItem("b", (new Input())->setValue("b")->disable());
+    $form->a = (new Input())->setValue("a");
+    $form->b = (new Input())->setValue("b")->setDisabled(true);
     $this->assertEquals(["a" => "a"], $form->getValue());
   }
   
   public function testSetValue() {
     $form = new Form();
-    $form->setItem("a", (new Input())->setValue("a"));
-    $form->setItem("b", (new Input())->setValue("b"));
-    $form->setItem("c", new Form());
-    $form->getItem("c")->setItem("d", (new Input())->setValue("d"));
-    $form->getItem("c")->setItem("e", (new Input())->setValue("e"));
+    $form->a = (new Input())->setValue("a");
+    $form->b = (new Input())->setValue("b");
+    $form->c = new Form();
+    $form->c->d = (new Input())->setValue("d");
+    $form->c->e = (new Input())->setValue("e");
     $form->setValue([
       "a" => "A",
       "c" => [

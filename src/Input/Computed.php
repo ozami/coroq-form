@@ -23,7 +23,7 @@ abstract class Computed extends Input {
   /**
    * @return mixed
    */
-  public function getValue() {
+  public function getValue(): mixed {
     foreach ($this->source_inputs as $source_input) {
       if (!$source_input->validate()) {
         return null;
@@ -39,7 +39,7 @@ abstract class Computed extends Input {
   /**
    * @return bool
    */
-  public function validate() {
+  public function validate(): bool {
     foreach ($this->source_inputs as $source_input) {
       if (!$source_input->validate()) {
         return false;
