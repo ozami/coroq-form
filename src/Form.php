@@ -2,27 +2,12 @@
 declare(strict_types=1);
 namespace Coroq\Form;
 
-class Form implements FormItemInterface {
+use Coroq\Form\FormItem\FormItemInterface;
+
+class Form implements FormInterface {
   private bool $__disabled = false;
-
-  public function getItem(string $name): FormItemInterface {
-    $item = $this->$name ?? null;
-    if (!($item instanceof FormItemInterface)) {
-      throw new \LogicException("Item '$name' not found.");
-    }
-    return $item;
-  }
-
-  public function getItemIn(string $path): FormItemInterface {
-    if (!is_array($path)) {
-      $path = explode('/', $path);
-    }
-    $item = $this;
-    foreach ($path as $node) {
-      $item = $item->getItem($node);
-    }
-    return $item;
-  }
+  private bool $__required = true;
+  private bool $__readonly = false;
 
   public function getValue(): array {
     $values = [];
@@ -32,7 +17,18 @@ class Form implements FormItemInterface {
     return $values;
   }
 
+  public function getParsedValue(): array {
+    $values = [];
+    foreach ($this->getEnabledItems() as $name => $item) {
+      $values[$name] = $item->getParsedValue();
+    }
+    return $values;
+  }
+
   public function setValue(mixed $value): self {
+    if ($this->__readonly) {
+      return $this;
+    }
     foreach ($this->getEnabledItems() as $name => $item) {
       $item->setValue($value[$name] ?? '');
     }
@@ -40,7 +36,7 @@ class Form implements FormItemInterface {
   }
 
   public function clear(): self {
-    foreach ($this->getEnabledItems() as $item) {
+    foreach ($this->getItems() as $item) {
       $item->clear();
     }
     return $this;
@@ -61,11 +57,27 @@ class Form implements FormItemInterface {
       if ($item->isEmpty()) {
         continue;
       }
-      if ($item instanceof Form) {
+      if ($item instanceof FormInterface) {
         $values[$name] = $item->getFilledValue();
       }
       else {
         $values[$name] = $item->getValue();
+      }
+    }
+    return $values;
+  }
+
+  public function getFilledParsedValue(): array {
+    $values = [];
+    foreach ($this->getEnabledItems() as $name => $item) {
+      if ($item->isEmpty()) {
+        continue;
+      }
+      if ($item instanceof FormInterface) {
+        $values[$name] = $item->getFilledParsedValue();
+      }
+      else {
+        $values[$name] = $item->getParsedValue();
       }
     }
     return $values;
@@ -76,11 +88,34 @@ class Form implements FormItemInterface {
   }
 
   public function setDisabled(bool $disabled): self {
-    $this->__disabled = (bool)$disabled;
+    $this->__disabled = boolval($disabled);
+    return $this;
+  }
+
+  public function isRequired(): bool {
+    return $this->__required;
+  }
+
+  public function setRequired(bool $required): self {
+    $this->__required = $required;
+    return $this;
+  }
+
+  public function isReadOnly(): bool {
+    return $this->__readonly;
+  }
+
+  public function setReadOnly(bool $readOnly): self {
+    $this->__readonly = $readOnly;
     return $this;
   }
 
   public function validate(): bool {
+    // Skip validation if optional and empty
+    if (!$this->isRequired() && $this->isEmpty()) {
+      return true;
+    }
+
     foreach ($this->getEnabledItems() as $item) {
       $item->validate();
     }
@@ -104,11 +139,16 @@ class Form implements FormItemInterface {
     return false;
   }
 
+  public function getItem(mixed $name): ?FormItemInterface {
+    $items = $this->getItems();
+    return $items[$name] ?? null;
+  }
+
   /**
    * @return array<FormItemInterface>
    */
   protected function getItems(): array {
-    $vars = get_object_vars($this);
+    $vars = getPublicProperties($this);
     $items = [];
     foreach ($vars as $name => $var) {
       if ($var instanceof FormItemInterface) {
@@ -130,4 +170,8 @@ class Form implements FormItemInterface {
     }
     return $enabledItems;
   }
+}
+
+function getPublicProperties(mixed $object): array {
+  return get_object_vars($object);
 }
