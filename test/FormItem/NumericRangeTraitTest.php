@@ -1,13 +1,13 @@
 <?php
 use Coroq\Form\FormItem\NumericRangeTrait;
 use Coroq\Form\FormItem\Input;
-use Coroq\Form\FormItem\HasNumericRange;
+use Coroq\Form\FormItem\HasNumericRangeInterface;
 use Coroq\Form\Error\TooSmallError;
 use Coroq\Form\Error\TooLargeError;
 use PHPUnit\Framework\TestCase;
 
 // Create a concrete test class that uses the trait
-class NumericRangeTestInput extends Input implements HasNumericRange {
+class NumericRangeTestInput extends Input implements HasNumericRangeInterface {
   use NumericRangeTrait;
 
   // Expose validateRange for testing

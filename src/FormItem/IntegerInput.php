@@ -5,7 +5,7 @@ namespace Coroq\Form\FormItem;
 use Coroq\Form\Error\Error;
 use Coroq\Form\Error\NotIntegerError;
 
-class IntegerInput extends Input implements HasNumericRange {
+class IntegerInput extends Input implements HasNumericRangeInterface {
   use NumericRangeTrait;
 
   /**

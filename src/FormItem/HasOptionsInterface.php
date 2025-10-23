@@ -8,7 +8,7 @@ namespace Coroq\Form\FormItem;
  * Implemented by inputs using OptionsValidationTrait (e.g., Select, MultiSelect)
  * Useful for HTML generators to build <select> or radio/checkbox lists
  */
-interface HasOptions {
+interface HasOptionsInterface {
   /**
    * @return array<string|int, string> Array of value => label pairs
    */

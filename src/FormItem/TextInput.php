@@ -6,7 +6,7 @@ use Coroq\Form\Error\Error;
 use Coroq\Form\Error\InvalidError;
 use Coroq\Form\Error\PatternMismatchError;
 
-class TextInput extends Input implements HasLengthRange {
+class TextInput extends Input implements HasLengthRangeInterface {
   use LengthRangeTrait;
   const UPPER = MB_CASE_UPPER;
   const LOWER = MB_CASE_LOWER;

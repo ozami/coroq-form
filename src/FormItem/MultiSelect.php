@@ -4,7 +4,7 @@ namespace Coroq\Form\FormItem;
 
 use Coroq\Form\Error\Error;
 
-class MultiSelect extends Input implements HasOptions, HasCountRange {
+class MultiSelect extends Input implements HasOptionsInterface, HasCountRangeInterface {
   use OptionsValidationTrait;
   use CountRangeTrait;
 

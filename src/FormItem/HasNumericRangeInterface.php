@@ -8,7 +8,7 @@ namespace Coroq\Form\FormItem;
  * Implemented by inputs using NumericRangeTrait (e.g., IntegerInput, NumberInput)
  * Useful for HTML generators to set min/max attributes on number inputs
  */
-interface HasNumericRange {
+interface HasNumericRangeInterface {
   public function getMin(): int|float;
   public function setMin(int|float $min): self;
   public function getMax(): int|float;

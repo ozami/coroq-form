@@ -8,7 +8,7 @@ namespace Coroq\Form\FormItem;
  * Implemented by inputs using CountRangeTrait (e.g., MultiSelect)
  * Useful for detecting min/max selection requirements
  */
-interface HasCountRange {
+interface HasCountRangeInterface {
   public function getMinCount(): int;
   public function setMinCount(int $minCount): self;
   public function getMaxCount(): int;

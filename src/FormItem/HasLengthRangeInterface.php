@@ -8,7 +8,7 @@ namespace Coroq\Form\FormItem;
  * Implemented by inputs using LengthRangeTrait (e.g., TextInput)
  * Useful for HTML generators to set maxlength attribute, show character counters, etc.
  */
-interface HasLengthRange {
+interface HasLengthRangeInterface {
   public function getMinLength(): int;
   public function setMinLength(int $minLength): self;
   public function getMaxLength(): int;

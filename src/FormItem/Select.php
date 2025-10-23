@@ -4,7 +4,7 @@ namespace Coroq\Form\FormItem;
 
 use Coroq\Form\Error\Error;
 
-class Select extends Input implements HasOptions {
+class Select extends Input implements HasOptionsInterface {
   use OptionsValidationTrait;
 
   /**
