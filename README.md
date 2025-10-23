@@ -560,30 +560,37 @@ $emails->addItem('user2@example.com');
 echo $emails->count();  // 2
 ```
 
-## Computed Inputs
+## Derived Inputs
 
-Create derived values from other inputs using a Closure:
+Derived inputs are special form items that depend on other form items. They can:
+- **Calculate values** from source inputs (e.g., full name from first + last name)
+- **Perform cross-field validation** (e.g., password confirmation matching)
+- **Track external validation** results (e.g., authentication status)
+
+**Key Properties:**
+- Always **read-only** - their value comes from sources, not user input
+- Return `null` if any source input fails validation
+- Can have both value calculation (`setValueCalculator`) and validation (`setValidator`)
+
+### Basic Example: Calculated Values
 
 ```php
-use Coroq\Form\FormItem\Computed;
+use Coroq\Form\FormItem\Derived;
 
 class UserForm extends Form {
     public readonly FormItem\TextInput $firstName;
     public readonly FormItem\TextInput $lastName;
-    public readonly Computed $fullName;
+    public readonly Derived $fullName;
 
     public function __construct() {
         $this->firstName = new FormItem\TextInput();
         $this->lastName = new FormItem\TextInput();
 
-        // Create computed field with a closure
-        $this->fullName = (new Computed())
-            ->setComputation(function(array $values) {
-                [$firstName, $lastName] = $values;
-                return $firstName . ' ' . $lastName;
-            })
-            ->addSourceInput($this->firstName)
-            ->addSourceInput($this->lastName);
+        // Derived field calculates value from sources
+        $this->fullName = (new Derived())
+            ->setValueCalculator(fn($first, $last) => $first . ' ' . $last)
+            ->addSource($this->firstName)
+            ->addSource($this->lastName);
     }
 }
 
@@ -594,29 +601,154 @@ $form->setValue([
 ]);
 
 echo $form->fullName->getValue(); // "Taro Yamada"
-// Note: Computed inputs are read-only and return null if any source fails validation
+
+// If a source is invalid, getValue() returns null
+$form->firstName->setValue('');  // Empty (fails validation if required)
+echo $form->fullName->getValue(); // null
 ```
 
-More examples:
+### More Calculation Examples
 
 ```php
 class OrderForm extends Form {
     public readonly FormItem\NumberInput $price;
     public readonly FormItem\IntegerInput $quantity;
-    public readonly Computed $total;
+    public readonly Derived $total;
 
     public function __construct() {
         $this->price = new FormItem\NumberInput();
         $this->quantity = new FormItem\IntegerInput();
 
         // Calculate total price
-        $this->total = (new Computed())
-            ->setComputation(function(array $values) {
-                [$price, $quantity] = $values;
-                return $price * $quantity;
+        $this->total = (new Derived())
+            ->setValueCalculator(fn($price, $quantity) => $price * $quantity)
+            ->addSource($this->price)
+            ->addSource($this->quantity);
+    }
+}
+```
+
+### Cross-Field Validation
+
+Use `setValidator()` to validate relationships between fields. The validator receives:
+1. All source values as individual parameters
+2. The calculated value as the last parameter (or `null` if no calculator)
+
+The validator returns an `Error` object if invalid, or `null` if valid.
+
+```php
+class RegistrationForm extends Form {
+    public readonly FormItem\TextInput $password;
+    public readonly FormItem\TextInput $passwordConfirm;
+    public readonly Derived $passwordMatch;
+
+    public function __construct() {
+        $this->password = (new FormItem\TextInput())
+            ->setMinLength(8);
+        $this->passwordConfirm = new FormItem\TextInput();
+
+        // Validate that passwords match (no value calculator needed)
+        $this->passwordMatch = (new Derived())
+            ->setValidator(function($password, $confirm, $calculated) {
+                // $password = source 1 value
+                // $confirm = source 2 value
+                // $calculated = null (no setValueCalculator)
+                return $password !== $confirm
+                    ? new Error\InvalidError($this)
+                    : null;
             })
-            ->addSourceInput($this->price)
-            ->addSourceInput($this->quantity);
+            ->addSource($this->password)
+            ->addSource($this->passwordConfirm);
+    }
+}
+
+$form = new RegistrationForm();
+$form->setValue([
+    'password' => 'secret123',
+    'passwordConfirm' => 'secret456'
+]);
+
+if (!$form->validate()) {
+    if ($form->passwordMatch->hasError()) {
+        echo "Passwords must match";
+    }
+}
+```
+
+**Note:** Derived validation only runs if all source inputs pass their own validation first. If any source fails, the Derived item automatically gets a `SourceItemInvalidError`.
+
+### Combined: Calculation with Validation
+
+You can use both `setValueCalculator()` and `setValidator()` together:
+
+```php
+class ProfileForm extends Form {
+    public readonly FormItem\TextInput $firstName;
+    public readonly FormItem\TextInput $lastName;
+    public readonly Derived $displayName;
+
+    public function __construct() {
+        $this->firstName = new FormItem\TextInput();
+        $this->lastName = new FormItem\TextInput();
+
+        // Calculate display name and validate its length
+        $this->displayName = (new Derived())
+            ->setValueCalculator(fn($first, $last) => strtoupper($first . ' ' . $last))
+            ->setValidator(function($first, $last, $calculated) {
+                // $first = source 1 value
+                // $last = source 2 value
+                // $calculated = the computed value from setValueCalculator
+                return strlen($calculated) > 50
+                    ? new Error\TooLongError($this)
+                    : null;
+            })
+            ->addSource($this->firstName)
+            ->addSource($this->lastName);
+    }
+}
+
+$form = new ProfileForm();
+$form->setValue(['firstName' => 'Taro', 'lastName' => 'Yamada']);
+echo $form->displayName->getValue(); // "TARO YAMADA" (calculated)
+
+// Validation runs on the calculated value
+$form->setValue(['firstName' => str_repeat('A', 30), 'lastName' => str_repeat('B', 30)]);
+$form->validate(); // Fails - displayName has TooLongError
+```
+
+### External Validation
+
+Derived inputs can also track external validation results (e.g., from API calls):
+
+```php
+class LoginForm extends Form {
+    public readonly FormItem\EmailInput $email;
+    public readonly FormItem\TextInput $password;
+    public readonly Derived $authResult;
+
+    public function __construct() {
+        $this->email = new FormItem\EmailInput();
+        $this->password = new FormItem\TextInput();
+        // No calculator or validator - just a placeholder for external errors
+        $this->authResult = new Derived();
+    }
+}
+
+// In your controller
+$form = new LoginForm();
+$form->setValue($_POST);
+
+if ($form->validate()) {
+    // Check credentials with external service
+    if (!$authService->authenticate($form->email->getValue(), $form->password->getValue())) {
+        // Set error on the derived field
+        $form->authResult->setError(new Error\InvalidError($form->authResult));
+    }
+}
+
+if ($form->hasError()) {
+    if ($form->authResult->hasError()) {
+        echo "Login failed - invalid credentials";
     }
 }
 ```
@@ -1068,55 +1200,55 @@ if ($form->validate()) {
 
 Interfaces for detecting form item capabilities:
 
-### HasLengthRange
+### HasLengthRangeInterface
 
 Implemented by inputs with string length constraints (e.g., `TextInput`).
 
 ```php
-use Coroq\Form\FormItem\HasLengthRange;
+use Coroq\Form\FormItem\HasLengthRangeInterface;
 
-if ($input instanceof HasLengthRange) {
+if ($input instanceof HasLengthRangeInterface) {
     $maxLength = $input->getMaxLength();
     $minLength = $input->getMinLength();
     // Generate <input maxlength="...">
 }
 ```
 
-### HasNumericRange
+### HasNumericRangeInterface
 
 Implemented by inputs with numeric range constraints (e.g., `IntegerInput`, `NumberInput`).
 
 ```php
-use Coroq\Form\FormItem\HasNumericRange;
+use Coroq\Form\FormItem\HasNumericRangeInterface;
 
-if ($input instanceof HasNumericRange) {
+if ($input instanceof HasNumericRangeInterface) {
     $min = $input->getMin();
     $max = $input->getMax();
     // Generate <input type="number" min="..." max="...">
 }
 ```
 
-### HasOptions
+### HasOptionsInterface
 
 Implemented by inputs with predefined options (e.g., `Select`, `MultiSelect`).
 
 ```php
-use Coroq\Form\FormItem\HasOptions;
+use Coroq\Form\FormItem\HasOptionsInterface;
 
-if ($input instanceof HasOptions) {
+if ($input instanceof HasOptionsInterface) {
     $options = $input->getOptions();  // ['value' => 'label', ...]
     // Generate <select> with <option> elements
 }
 ```
 
-### HasCountRange
+### HasCountRangeInterface
 
 Implemented by inputs with selection count constraints (e.g., `MultiSelect`).
 
 ```php
-use Coroq\Form\FormItem\HasCountRange;
+use Coroq\Form\FormItem\HasCountRangeInterface;
 
-if ($input instanceof HasCountRange) {
+if ($input instanceof HasCountRangeInterface) {
     $minCount = $input->getMinCount();
     $maxCount = $input->getMaxCount();
     // Validate or display "Select 1-3 items"
@@ -1126,29 +1258,29 @@ if ($input instanceof HasCountRange) {
 ### Example: HTML Generator
 
 ```php
-use Coroq\Form\FormItem\HasLengthRange;
-use Coroq\Form\FormItem\HasNumericRange;
-use Coroq\Form\FormItem\HasOptions;
+use Coroq\Form\FormItem\HasLengthRangeInterface;
+use Coroq\Form\FormItem\HasNumericRangeInterface;
+use Coroq\Form\FormItem\HasOptionsInterface;
 
 function generateHtmlInput(FormItemInterface $input, string $name): string {
     $html = "<input type=\"text\" name=\"$name\"";
 
     // Add length constraints
-    if ($input instanceof HasLengthRange) {
+    if ($input instanceof HasLengthRangeInterface) {
         if ($input->getMaxLength() < PHP_INT_MAX) {
             $html .= " maxlength=\"{$input->getMaxLength()}\"";
         }
     }
 
     // Add numeric constraints
-    if ($input instanceof HasNumericRange) {
+    if ($input instanceof HasNumericRangeInterface) {
         $html .= " type=\"number\"";
         $html .= " min=\"{$input->getMin()}\"";
         $html .= " max=\"{$input->getMax()}\"";
     }
 
     // Generate select
-    if ($input instanceof HasOptions) {
+    if ($input instanceof HasOptionsInterface) {
         $html = "<select name=\"$name\">";
         foreach ($input->getOptions() as $value => $label) {
             $html .= "<option value=\"$value\">$label</option>";

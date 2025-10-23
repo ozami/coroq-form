@@ -77,7 +77,7 @@ $select = new FormItem\Select();
 | `Input\Katakana` | `FormItem\KatakanaInput` |
 | `Input\Select` | `FormItem\Select` |
 | `Input\MultiSelect` | `FormItem\MultiSelect` |
-| `Input\Computed` | `FormItem\Computed` |
+| `Input\Computed` | `FormItem\Derived` |
 
 ---
 
@@ -296,7 +296,7 @@ $form->setDisabled(true);
 
 ---
 
-### 7. Computed Inputs
+### 7. Derived (Computed) Inputs
 
 #### Before (2.1.0): Extend Computed Class
 
@@ -322,35 +322,50 @@ $fullName->addSourceInput($lastName);
 $form->setItem('full_name', $fullName);
 ```
 
-#### After (3.0.0): Use setComputation() with Closure
+#### After (3.0.0): Use setValueCalculator() with Closure
 
 ```php
-use Coroq\Form\FormItem\Computed;
+use Coroq\Form\FormItem\Derived;
 
 class UserForm extends Form {
     public readonly FormItem\TextInput $firstName;
     public readonly FormItem\TextInput $lastName;
-    public readonly Computed $fullName;
+    public readonly Derived $fullName;
 
     public function __construct() {
         $this->firstName = new FormItem\TextInput();
         $this->lastName = new FormItem\TextInput();
 
-        $this->fullName = (new Computed())
-            ->setComputation(function(array $values) {
-                [$first, $last] = $values;
-                return trim($first . ' ' . $last);
-            })
-            ->addSourceInput($this->firstName)
-            ->addSourceInput($this->lastName);
+        // Note: Calculator receives spread arguments, not an array
+        $this->fullName = (new Derived())
+            ->setValueCalculator(fn($first, $last) => trim($first . ' ' . $last))
+            ->addSource($this->firstName)
+            ->addSource($this->lastName);
     }
 }
 ```
 
+**New in 3.0.0:** `Derived` also supports `setValidator()` for cross-field validation:
+
+```php
+// Password confirmation validation
+$this->passwordMatch = (new Derived())
+    ->setValidator(function($password, $confirm, $calculated) {
+        return $password !== $confirm
+            ? new PasswordMismatchError($this)
+            : null;
+    })
+    ->addSource($this->password)
+    ->addSource($this->passwordConfirm);
+```
+
 **Migration:**
 
-1. Replace `computeValue()` method with `setComputation()` closure
-2. Use property-based access instead of `setItem()`
+1. Replace `computeValue()` method with `setValueCalculator()` closure
+2. Change `addSourceInput()` to `addSource()`
+3. Update closure to receive spread arguments instead of array
+4. Use property-based access instead of `setItem()`
+5. Consider using `setValidator()` for cross-field validation
 
 ---
 
@@ -667,7 +682,7 @@ if ($form->validate()) {
 - [ ] Replace `disable()`/`enable()` with `setDisabled(bool)`
 - [ ] Update error handling from error codes to error classes
 - [ ] Replace error stringifiers with `ErrorMessageFormatter`
-- [ ] Update Computed inputs to use `setComputation()` closure
+- [ ] Update Computed inputs to use `Derived` with `setValueCalculator()` and `addSource()`
 - [ ] Create Form subclasses for better type safety (recommended)
 - [ ] Consider using new features: `BooleanInput`, `FileInput`, `RepeatingForm`, `getParsedValue()`
 
