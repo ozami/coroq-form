@@ -4,6 +4,9 @@ namespace Coroq\Form\FormItem;
 
 use Coroq\Form\Error\Error;
 
+/**
+ * Multi-selection input with count constraints
+ */
 class MultiSelect extends Input implements HasOptionsInterface, HasCountRangeInterface {
   use OptionsValidationTrait;
   use CountRangeTrait;

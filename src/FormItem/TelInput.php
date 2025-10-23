@@ -2,6 +2,9 @@
 declare(strict_types=1);
 namespace Coroq\Form\FormItem;
 
+/**
+ * Telephone input that strips non-numeric characters
+ */
 class TelInput extends Input {
   use StringFilterTrait;
 

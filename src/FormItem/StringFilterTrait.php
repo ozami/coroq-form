@@ -2,6 +2,9 @@
 declare(strict_types=1);
 namespace Coroq\Form\FormItem;
 
+/**
+ * Provides string filtering methods (trim, mb_convert_kana)
+ */
 trait StringFilterTrait {
   /**
    * Trim whitespace from start

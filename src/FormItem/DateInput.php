@@ -5,6 +5,9 @@ namespace Coroq\Form\FormItem;
 use Coroq\Form\Error\Error;
 use Coroq\Form\Error\InvalidDateError;
 
+/**
+ * Date input with parsing and validation
+ */
 class DateInput extends Input {
   use StringFilterTrait;
 

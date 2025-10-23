@@ -5,6 +5,9 @@ namespace Coroq\Form\FormItem;
 use Coroq\Form\Error\Error;
 use Coroq\Form\Error\InvalidUrlError;
 
+/**
+ * URL input with validation and scheme restrictions
+ */
 class UrlInput extends Input {
   use StringFilterTrait;
 

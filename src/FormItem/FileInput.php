@@ -9,6 +9,9 @@ use Coroq\Form\Error\FileTooSmallError;
 use Coroq\Form\Error\InvalidMimeTypeError;
 use Coroq\Form\Error\InvalidExtensionError;
 
+/**
+ * File input with size, MIME type, and extension validation
+ */
 class FileInput extends Input {
   private ?int $maxSize = null;
   private ?int $minSize = null;

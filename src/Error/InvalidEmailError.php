@@ -5,6 +5,8 @@ namespace Coroq\Form\Error;
 use Coroq\Form\FormItem\EmailInput;
 
 /**
+ * Validation error for invalid email addresses
+ *
  * @property-read EmailInput $formItem
  */
 class InvalidEmailError extends Error {

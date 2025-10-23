@@ -5,6 +5,9 @@ namespace Coroq\Form\FormItem;
 use Coroq\Form\Error\Error;
 use Coroq\Form\Error\NotInOptionsError;
 
+/**
+ * Provides options storage and validation for select inputs
+ */
 trait OptionsValidationTrait {
   /** @var array */
   protected array $options = [];

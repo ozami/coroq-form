@@ -5,6 +5,9 @@ namespace Coroq\Form\FormItem;
 use Coroq\Form\Error\Error;
 use Coroq\Form\Error\InvalidEmailError;
 
+/**
+ * Email input with validation and automatic domain lowercasing
+ */
 class EmailInput extends Input {
   use StringFilterTrait;
 

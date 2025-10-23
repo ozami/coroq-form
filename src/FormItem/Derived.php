@@ -49,6 +49,9 @@ use Coroq\Form\Error\SourceItemInvalidError;
  *   ->addSource($form->last);
  * ```
  */
+/**
+ * Computed field derived from other form inputs
+ */
 class Derived extends AbstractInput {
   /** @var array<FormItemInterface> */
   private array $sources = [];

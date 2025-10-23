@@ -4,6 +4,9 @@ namespace Coroq\Form\FormItem;
 
 use Coroq\Form\Error\Error;
 
+/**
+ * Single-selection dropdown input
+ */
 class Select extends Input implements HasOptionsInterface {
   use OptionsValidationTrait;
 

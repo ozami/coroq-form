@@ -5,10 +5,25 @@ namespace Coroq\Form;
 use Closure;
 use Coroq\Form\FormItem\FormItemInterface;
 
+/**
+ * Repeating form for dynamic arrays of form items
+ *
+ * Uses a factory pattern to create repeated items (e.g., multiple addresses, phone numbers).
+ * Supports min/max item count constraints.
+ * Items are indexed by integer keys (0, 1, 2, ...).
+ *
+ * Example:
+ *   $emails = (new RepeatingForm())
+ *     ->setFactory(fn($i) => new EmailInput())
+ *     ->setMinItemCount(1)
+ *     ->setMaxItemCount(5);
+ *   $emails->setValue(['user@example.com', 'admin@example.com']);
+ */
 class RepeatingForm implements FormInterface {
-  /** @var array<int, FormItemInterface> */
+  /** @var array<int, FormItemInterface> Array of form items */
   private array $items = [];
 
+  /** @var Closure|null Factory function to create new items */
   private ?Closure $factory = null;
 
   private bool $__disabled = false;
@@ -22,7 +37,9 @@ class RepeatingForm implements FormInterface {
   }
 
   /**
-   * @param Closure(int): FormItemInterface $factory
+   * Set the factory function for creating new items
+   *
+   * @param Closure(int): FormItemInterface $factory Function that receives index and returns FormItemInterface
    * @return $this
    */
   public function setFactory(Closure $factory): self {
@@ -30,6 +47,13 @@ class RepeatingForm implements FormInterface {
     return $this;
   }
 
+  /**
+   * Get all values as an indexed array
+   *
+   * Automatically expands to minItemCount if needed.
+   *
+   * @return array<int, mixed> Array of values
+   */
   public function getValue(): array {
     // Ensure structural minimum by recreating if needed
     if (count($this->items) < $this->minItemCount) {

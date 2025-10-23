@@ -6,6 +6,9 @@ use Coroq\Form\Error\Error;
 use Coroq\Form\Error\TooShortError;
 use Coroq\Form\Error\TooLongError;
 
+/**
+ * Provides min/max length validation for text inputs
+ */
 trait LengthRangeTrait {
   /** @var int */
   protected $minLength = 0;

@@ -5,6 +5,9 @@ namespace Coroq\Form\FormItem;
 use Coroq\Form\Error\Error;
 use Coroq\Form\Error\NotNumericError;
 
+/**
+ * Numeric input with validation and range constraints
+ */
 class NumberInput extends Input implements HasNumericRangeInterface {
   use NumericRangeTrait;
 

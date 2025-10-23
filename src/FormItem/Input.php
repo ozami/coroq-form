@@ -4,17 +4,34 @@ namespace Coroq\Form\FormItem;
 use Coroq\Form\Error\Error;
 use Coroq\Form\Error\EmptyError;
 
+/**
+ * Base class for all form input types
+ *
+ * Provides core functionality for value storage, filtering, and validation.
+ * Subclasses override filter() and doValidate() to implement specific input types.
+ */
 class Input extends AbstractInput {
-  /** @var mixed */
+  /** @var mixed The current value */
   private $value = "";
 
   public function __construct() {
   }
 
+  /**
+   * Get the current value
+   *
+   * @return mixed The filtered value
+   */
   public function getValue(): mixed {
     return $this->value;
   }
 
+  /**
+   * Set the value (applies filtering and clears errors)
+   *
+   * @param mixed $value The value to set
+   * @return self
+   */
   public function setValue(mixed $value): self {
     if ($this->isReadOnly()) {
       return $this;
@@ -24,15 +41,32 @@ class Input extends AbstractInput {
     return $this;
   }
 
+  /**
+   * Check if the value is empty
+   *
+   * @return bool True if the value is empty
+   */
   public function isEmpty(): bool {
     return $this->getValue() . "" == "";
   }
 
+  /**
+   * Clear the value (set to empty string)
+   *
+   * @return self
+   */
   public function clear(): self {
     $this->setValue("");
     return $this;
   }
 
+  /**
+   * Validate the value
+   *
+   * Checks required constraint first, then calls doValidate() if not empty.
+   *
+   * @return bool True if valid, false if validation failed
+   */
   public function validate(): bool {
     $this->setError(null);
     if ($this->isEmpty()) {

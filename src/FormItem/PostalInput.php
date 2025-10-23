@@ -2,6 +2,9 @@
 declare(strict_types=1);
 namespace Coroq\Form\FormItem;
 
+/**
+ * Japanese postal code input with formatting
+ */
 class PostalInput extends Input {
   use StringFilterTrait;
 

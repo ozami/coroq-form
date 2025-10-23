@@ -8,6 +8,9 @@ use Coroq\Form\Error\TooLargeError;
 
 define("COROQ_INPUT_NUMERIC_MINUS_INF", -INF);
 
+/**
+ * Provides min/max numeric range validation
+ */
 trait NumericRangeTrait {
   /** @var int|float */
   protected $min = COROQ_INPUT_NUMERIC_MINUS_INF;

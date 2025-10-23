@@ -6,6 +6,9 @@ use Coroq\Form\Error\Error;
 use Coroq\Form\Error\InvalidError;
 use Coroq\Form\Error\PatternMismatchError;
 
+/**
+ * Text input with extensive filtering options (trim, case conversion, mb_convert_kana, etc.)
+ */
 class TextInput extends Input implements HasLengthRangeInterface {
   use LengthRangeTrait;
   const UPPER = MB_CASE_UPPER;

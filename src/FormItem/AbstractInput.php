@@ -24,51 +24,62 @@ abstract class AbstractInput implements FormItemInterface {
   /** @var Error|null */
   private ?Error $error = null;
 
+  /** Check if this input is disabled */
   public function isDisabled(): bool {
     return $this->disabled;
   }
 
+  /** Set disabled state */
   public function setDisabled(bool $disabled): self {
     $this->disabled = $disabled;
     return $this;
   }
 
+  /** Check if this input is required */
   public function isRequired(): bool {
     return $this->required;
   }
 
+  /** Set required state (default is true) */
   public function setRequired(bool $required): self {
     $this->required = $required;
     return $this;
   }
 
+  /** Check if this input is read-only */
   public function isReadOnly(): bool {
     return $this->readOnly;
   }
 
+  /** Set read-only state */
   public function setReadOnly(bool $readOnly): self {
     $this->readOnly = $readOnly;
     return $this;
   }
 
+  /** Get the human-readable label */
   public function getLabel(): string {
     return $this->label;
   }
 
+  /** Set the human-readable label */
   public function setLabel(string $label): self {
     $this->label = $label;
     return $this;
   }
 
+  /** Get the validation error (null if no error) */
   public function getError(): ?Error {
     return $this->error;
   }
 
+  /** Set the validation error */
   public function setError(?Error $error): self {
     $this->error = $error;
     return $this;
   }
 
+  /** Check if there is a validation error */
   public function hasError(): bool {
     return $this->getError() !== null;
   }

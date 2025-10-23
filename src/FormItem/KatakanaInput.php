@@ -5,6 +5,9 @@ namespace Coroq\Form\FormItem;
 use Coroq\Form\Error\Error;
 use Coroq\Form\Error\NotKatakanaError;
 
+/**
+ * Katakana input with automatic conversion and validation
+ */
 class KatakanaInput extends TextInput {
   public function __construct() {
     parent::__construct();

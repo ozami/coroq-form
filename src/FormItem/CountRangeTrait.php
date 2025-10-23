@@ -6,6 +6,9 @@ use Coroq\Form\Error\Error;
 use Coroq\Form\Error\TooFewSelectionsError;
 use Coroq\Form\Error\TooManySelectionsError;
 
+/**
+ * Provides min/max selection count validation for multi-select inputs
+ */
 trait CountRangeTrait {
   /** @var int */
   protected int $minCount = 0;

@@ -4,11 +4,30 @@ namespace Coroq\Form;
 
 use Coroq\Form\FormItem\FormItemInterface;
 
+/**
+ * Form container for managing groups of form items
+ *
+ * Items are stored as public properties on the Form object.
+ * Supports hierarchical structure - Forms can contain other Forms.
+ * Items can be disabled/enabled, required/optional, readonly.
+ *
+ * Example:
+ *   $form = new Form();
+ *   $form->email = new EmailInput();
+ *   $form->name = new TextInput();
+ *   $form->address = new Form();
+ *   $form->address->street = new TextInput();
+ */
 class Form implements FormInterface {
   private bool $__disabled = false;
   private bool $__required = true;
   private bool $__readonly = false;
 
+  /**
+   * Get all values from enabled items as an associative array
+   *
+   * @return array<string, mixed> Array of name => value pairs
+   */
   public function getValue(): array {
     $values = [];
     foreach ($this->getEnabledItems() as $name => $item) {
@@ -17,6 +36,11 @@ class Form implements FormInterface {
     return $values;
   }
 
+  /**
+   * Get all parsed values with type conversion
+   *
+   * @return array<string, mixed> Array of name => parsed value pairs
+   */
   public function getParsedValue(): array {
     $values = [];
     foreach ($this->getEnabledItems() as $name => $item) {
@@ -25,6 +49,12 @@ class Form implements FormInterface {
     return $values;
   }
 
+  /**
+   * Set values from an array
+   *
+   * @param mixed $value Associative array of values
+   * @return self
+   */
   public function setValue(mixed $value): self {
     if ($this->__readonly) {
       return $this;
@@ -35,6 +65,11 @@ class Form implements FormInterface {
     return $this;
   }
 
+  /**
+   * Clear all items (set to empty)
+   *
+   * @return self
+   */
   public function clear(): self {
     foreach ($this->getItems() as $item) {
       $item->clear();
@@ -42,6 +77,11 @@ class Form implements FormInterface {
     return $this;
   }
 
+  /**
+   * Check if all items are empty
+   *
+   * @return bool
+   */
   public function isEmpty(): bool {
     foreach ($this->getEnabledItems() as $item) {
       if (!$item->isEmpty()) {
@@ -51,6 +91,11 @@ class Form implements FormInterface {
     return true;
   }
 
+  /**
+   * Get only non-empty values recursively
+   *
+   * @return array<string, mixed> Array of name => value pairs (excluding empty)
+   */
   public function getFilledValue(): array {
     $values = [];
     foreach ($this->getEnabledItems() as $name => $item) {
