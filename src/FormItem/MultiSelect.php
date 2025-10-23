@@ -25,7 +25,7 @@ class MultiSelect extends Input implements HasOptions, HasCountRange {
    * @return self
    */
   public function setValue($value): self {
-    $value = array_diff((array)$value, ["", null]);
+    $value = array_values(array_diff((array)$value, ["", null]));
     return parent::setValue($value);
   }
 

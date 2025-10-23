@@ -19,8 +19,8 @@ class MultiSelectTest extends TestCase {
       ->setOptions(['a' => 'Option A', 'b' => 'Option B'])
       ->setValue(['a', '', 'b']);
 
-    // array_diff preserves keys, so [0 => 'a', 2 => 'b']
-    $this->assertSame(['a', 'b'], array_values($input->getValue()));
+    // Should reindex after filtering
+    $this->assertSame(['a', 'b'], $input->getValue());
   }
 
   public function testSetValueFiltersNullValues() {
@@ -28,8 +28,8 @@ class MultiSelectTest extends TestCase {
       ->setOptions(['a' => 'Option A', 'b' => 'Option B'])
       ->setValue(['a', null, 'b']);
 
-    // array_diff preserves keys, so [0 => 'a', 2 => 'b']
-    $this->assertSame(['a', 'b'], array_values($input->getValue()));
+    // Should reindex after filtering
+    $this->assertSame(['a', 'b'], $input->getValue());
   }
 
   public function testSetValueConvertsNonArrayToArray() {
@@ -342,13 +342,25 @@ class MultiSelectTest extends TestCase {
     $this->assertSame(['A', 'B', 'C'], $input->getSelectedLabel());
   }
 
-  public function testSetValuePreservesArrayKeys() {
+  public function testSetValueReindexesArray() {
     $input = (new MultiSelect())
       ->setOptions(['a' => 'A', 'b' => 'B', 'c' => 'C'])
       ->setValue(['a', 'c']);
 
     $value = $input->getValue();
-    // array_diff reindexes the array, so we get [0 => 'a', 1 => 'c']
+    // Should always return sequential array keys
     $this->assertSame(['a', 'c'], $value);
+    $this->assertSame([0, 1], array_keys($value));
+  }
+
+  public function testValueJsonEncodesAsArray() {
+    $input = (new MultiSelect())
+      ->setOptions(['a' => 'A', 'b' => 'B', 'c' => 'C'])
+      ->setValue(['a', '', 'c']);
+
+    $value = $input->getValue();
+    $json = json_encode($value);
+    // Should encode as JSON array, not object
+    $this->assertSame('["a","c"]', $json);
   }
 }
