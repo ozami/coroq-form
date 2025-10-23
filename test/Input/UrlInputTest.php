@@ -147,9 +147,9 @@ class UrlInputTest extends TestCase {
 
   public function testValidateWithInternationalDomain() {
     $input = (new UrlInput())->setValue('https://日本.jp');
-    // This might fail depending on PHP's FILTER_VALIDATE_URL implementation
-    // Just testing the behavior
-    $input->validate();
-    // No assertion - behavior depends on PHP version
+    // FILTER_VALIDATE_URL does not support non-Punycode international domains on PHP 8.0-8.4
+    // International domains must be converted to Punycode (e.g., xn--wgv71a.jp) to pass validation
+    $this->assertFalse($input->validate());
+    $this->assertInstanceOf(InvalidUrlError::class, $input->getError());
   }
 }
