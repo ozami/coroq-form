@@ -35,6 +35,101 @@ class FormTest extends TestCase {
     $this->assertEquals(['name' => 'John'], $filled);
   }
 
+  public function testGetFilledValueWithNestedForm() {
+    $form = new Form();
+    $form->name = (new Input())->setValue('John');
+    $form->email = (new Input())->setValue('');
+    $form->address = new Form();
+    $form->address->street = (new Input())->setValue('Main St');
+    $form->address->city = (new Input())->setValue('');
+    $form->address->zip = (new Input())->setValue('12345');
+
+    $filled = $form->getFilledValue();
+    $this->assertEquals([
+      'name' => 'John',
+      'address' => [
+        'street' => 'Main St',
+        'zip' => '12345',
+      ]
+    ], $filled);
+  }
+
+  public function testGetFilledValueWithEmptyNestedForm() {
+    $form = new Form();
+    $form->name = (new Input())->setValue('John');
+    $form->address = new Form();
+    $form->address->street = (new Input())->setValue('');
+    $form->address->city = (new Input())->setValue('');
+
+    // Empty nested form should be excluded
+    $filled = $form->getFilledValue();
+    $this->assertEquals(['name' => 'John'], $filled);
+  }
+
+  public function testGetFilledValueWithMultipleLevelsOfNesting() {
+    $form = new Form();
+    $form->name = (new Input())->setValue('John');
+    $form->contact = new Form();
+    $form->contact->email = (new Input())->setValue('john@example.com');
+    $form->contact->address = new Form();
+    $form->contact->address->street = (new Input())->setValue('Main St');
+    $form->contact->address->city = (new Input())->setValue('');
+    $form->contact->address->zip = (new Input())->setValue('12345');
+
+    $filled = $form->getFilledValue();
+    $this->assertEquals([
+      'name' => 'John',
+      'contact' => [
+        'email' => 'john@example.com',
+        'address' => [
+          'street' => 'Main St',
+          'zip' => '12345',
+        ]
+      ]
+    ], $filled);
+  }
+
+  public function testGetFilledValueWithDisabledItems() {
+    $form = new Form();
+    $form->name = (new Input())->setValue('John');
+    $form->email = (new Input())->setValue('john@example.com')->setDisabled(true);
+    $form->phone = (new Input())->setValue('');
+
+    // Disabled items should be excluded
+    $filled = $form->getFilledValue();
+    $this->assertEquals(['name' => 'John'], $filled);
+  }
+
+  public function testGetFilledValueWithDisabledNestedForm() {
+    $form = new Form();
+    $form->name = (new Input())->setValue('John');
+    $form->address = new Form();
+    $form->address->street = (new Input())->setValue('Main St');
+    $form->address->city = (new Input())->setValue('Springfield');
+    $form->address->setDisabled(true);
+
+    // Disabled nested form should be excluded
+    $filled = $form->getFilledValue();
+    $this->assertEquals(['name' => 'John'], $filled);
+  }
+
+  public function testGetFilledValueWithMixedEmptyAndFilledNestedForms() {
+    $form = new Form();
+    $form->name = (new Input())->setValue('John');
+    $form->work = new Form();
+    $form->work->company = (new Input())->setValue('Acme Corp');
+    $form->home = new Form();
+    $form->home->street = (new Input())->setValue('');
+
+    $filled = $form->getFilledValue();
+    $this->assertEquals([
+      'name' => 'John',
+      'work' => [
+        'company' => 'Acme Corp'
+      ]
+    ], $filled);
+  }
+
   public function testGetFilledParsedValue() {
     $form = new Form();
     $form->age = (new IntegerInput())->setValue('30');
@@ -135,5 +230,239 @@ class FormTest extends TestCase {
 
     $formInterface = $form; // Typed as FormInterface
     $this->assertInstanceOf(\Coroq\Form\FormItem\FormItemInterface::class, $formInterface->getItem('name'));
+  }
+
+  // Form::clear() tests
+
+  public function testClearClearsAllItems() {
+    $form = new Form();
+    $form->name = (new Input())->setValue('John');
+    $form->email = (new Input())->setValue('john@example.com');
+    $form->age = (new IntegerInput())->setValue('30');
+
+    $form->clear();
+
+    $this->assertSame('', $form->name->getValue());
+    $this->assertSame('', $form->email->getValue());
+    $this->assertSame('', $form->age->getValue());
+  }
+
+  public function testClearClearsDisabledItems() {
+    $form = new Form();
+    $form->name = (new Input())->setValue('John')->setDisabled(true);
+    $form->email = (new Input())->setValue('john@example.com');
+
+    // clear() should clear ALL items, including disabled ones
+    $form->clear();
+
+    $this->assertSame('', $form->name->getValue());
+    $this->assertSame('', $form->email->getValue());
+  }
+
+  public function testClearClearsNestedForms() {
+    $form = new Form();
+    $form->name = (new Input())->setValue('John');
+    $form->address = new Form();
+    $form->address->street = (new Input())->setValue('Main St');
+    $form->address->city = (new Input())->setValue('Springfield');
+
+    $form->clear();
+
+    $this->assertSame('', $form->name->getValue());
+    $this->assertSame('', $form->address->street->getValue());
+    $this->assertSame('', $form->address->city->getValue());
+  }
+
+  public function testClearReturnsFluentInterface() {
+    $form = new Form();
+    $form->name = (new Input())->setValue('John');
+
+    $result = $form->clear();
+
+    $this->assertSame($form, $result);
+  }
+
+  public function testClearRemovesErrors() {
+    $form = new Form();
+    $form->name = new Input(); // Required by default
+
+    $form->validate(); // Should fail
+    $this->assertTrue($form->hasError());
+
+    $form->clear();
+    // clear() calls setValue('') which clears errors
+    $this->assertFalse($form->hasError());
+  }
+
+  public function testClearWithMultipleLevelsOfNesting() {
+    $form = new Form();
+    $form->name = (new Input())->setValue('John');
+    $form->contact = new Form();
+    $form->contact->email = (new Input())->setValue('john@example.com');
+    $form->contact->address = new Form();
+    $form->contact->address->street = (new Input())->setValue('Main St');
+
+    $form->clear();
+
+    $this->assertSame('', $form->name->getValue());
+    $this->assertSame('', $form->contact->email->getValue());
+    $this->assertSame('', $form->contact->address->street->getValue());
+  }
+
+  // Form::isReadOnly() tests
+
+  public function testIsReadOnlyDefaultIsFalse() {
+    $form = new Form();
+    $this->assertFalse($form->isReadOnly());
+  }
+
+  public function testIsReadOnlyReturnsTrueAfterSetReadOnly() {
+    $form = new Form();
+    $form->setReadOnly(true);
+    $this->assertTrue($form->isReadOnly());
+  }
+
+  public function testIsReadOnlyReturnsFalseAfterSetReadOnlyFalse() {
+    $form = new Form();
+    $form->setReadOnly(true);
+    $form->setReadOnly(false);
+    $this->assertFalse($form->isReadOnly());
+  }
+
+  public function testSetReadOnlyReturnsFluentInterface() {
+    $form = new Form();
+    $result = $form->setReadOnly(true);
+    $this->assertSame($form, $result);
+  }
+
+  public function testReadOnlyFormIgnoresSetValue() {
+    $form = new Form();
+    $form->name = (new Input())->setValue('Original');
+    $form->setReadOnly(true);
+
+    $form->setValue(['name' => 'New']);
+
+    // Should still have original value
+    $this->assertSame('Original', $form->name->getValue());
+  }
+
+  // Form::getError() tests
+
+  public function testGetErrorReturnsEmptyArrayWhenNoErrors() {
+    $form = new Form();
+    $form->name = (new Input())->setValue('John');
+    $form->email = (new Input())->setValue('john@example.com');
+
+    $form->validate();
+
+    $errors = $form->getError();
+    $this->assertIsArray($errors);
+    $this->assertArrayHasKey('name', $errors);
+    $this->assertArrayHasKey('email', $errors);
+    $this->assertNull($errors['name']);
+    $this->assertNull($errors['email']);
+  }
+
+  public function testGetErrorReturnsErrorsFromItems() {
+    $form = new Form();
+    $form->name = new Input(); // Required, empty
+    $form->email = (new Input())->setValue('john@example.com');
+
+    $form->validate();
+
+    $errors = $form->getError();
+    $this->assertNotNull($errors['name']);
+    $this->assertInstanceOf(\Coroq\Form\Error\Error::class, $errors['name']);
+    $this->assertNull($errors['email']);
+  }
+
+  public function testGetErrorExcludesDisabledItems() {
+    $form = new Form();
+    $form->name = new Input(); // Required, empty
+    $form->email = (new Input())->setDisabled(true); // Required, empty, but disabled
+
+    $form->validate();
+
+    $errors = $form->getError();
+    $this->assertArrayHasKey('name', $errors);
+    $this->assertArrayNotHasKey('email', $errors); // Disabled items excluded
+  }
+
+  public function testGetErrorIncludesNestedFormErrors() {
+    $form = new Form();
+    $form->name = (new Input())->setValue('John');
+    $form->address = new Form();
+    $form->address->street = new Input(); // Required, empty
+    $form->address->city = (new Input())->setValue('Springfield');
+
+    $form->validate();
+
+    $errors = $form->getError();
+    $this->assertNull($errors['name']);
+    $this->assertIsArray($errors['address']);
+    $this->assertNotNull($errors['address']['street']);
+    $this->assertNull($errors['address']['city']);
+  }
+
+  public function testGetErrorWithMultipleLevelsOfNesting() {
+    $form = new Form();
+    $form->name = (new Input())->setValue('John');
+    $form->contact = new Form();
+    $form->contact->email = new Input(); // Required, empty - ERROR
+    $form->contact->address = new Form();
+    $form->contact->address->street = (new Input())->setValue('Main St');
+    $form->contact->address->city = new Input(); // Required, empty - ERROR
+
+    $form->validate();
+
+    $errors = $form->getError();
+    $this->assertNull($errors['name']);
+    $this->assertIsArray($errors['contact']);
+    $this->assertNotNull($errors['contact']['email']);
+    $this->assertIsArray($errors['contact']['address']);
+    $this->assertNull($errors['contact']['address']['street']);
+    $this->assertNotNull($errors['contact']['address']['city']);
+  }
+
+  public function testGetErrorReturnsOnlyEnabledItemErrors() {
+    $form = new Form();
+    $form->name = new Input(); // Required, empty
+    $form->email = new Input(); // Required, empty
+    $form->phone = new Input(); // Required, empty
+    $form->email->setDisabled(true);
+
+    $form->validate();
+
+    $errors = $form->getError();
+    $this->assertArrayHasKey('name', $errors);
+    $this->assertArrayNotHasKey('email', $errors); // Disabled
+    $this->assertArrayHasKey('phone', $errors);
+  }
+
+  public function testGetErrorWithNestedFormPartiallyDisabled() {
+    $form = new Form();
+    $form->name = (new Input())->setValue('John');
+    $form->address = new Form();
+    $form->address->street = new Input(); // Required, empty
+    $form->address->city = new Input(); // Required, empty
+    $form->address->city->setDisabled(true);
+
+    $form->validate();
+
+    $errors = $form->getError();
+    $this->assertIsArray($errors['address']);
+    $this->assertNotNull($errors['address']['street']); // Has error
+    $this->assertArrayNotHasKey('city', $errors['address']); // Disabled
+  }
+
+  public function testGetErrorBeforeValidation() {
+    $form = new Form();
+    $form->name = new Input(); // Required, empty but not validated
+
+    // getError() should still return structure
+    $errors = $form->getError();
+    $this->assertIsArray($errors);
+    $this->assertArrayHasKey('name', $errors);
+    $this->assertNull($errors['name']); // No error set yet
   }
 }

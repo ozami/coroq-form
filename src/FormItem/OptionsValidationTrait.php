@@ -24,7 +24,7 @@ trait OptionsValidationTrait {
    * @return Error|null NotInOptionsError if value not in options
    */
   protected function validateInOptions($value): ?Error {
-    if (!isset($this->options[$value])) {
+    if (!array_key_exists($value, $this->options)) {
       return new NotInOptionsError($this);
     }
     return null;

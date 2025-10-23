@@ -78,13 +78,8 @@ class FileInput extends Input {
    * @return Error|null
    */
   protected function doValidate(mixed $value): ?Error {
-    // Check file exists
-    if (!file_exists($value)) {
-      return new FileNotFoundError($this);
-    }
-
-    // Check file size
-    $size = filesize($value);
+    // Check file size (filesize returns false if file doesn't exist or can't be accessed)
+    $size = @filesize($value);
     if ($size === false) {
       return new FileNotFoundError($this);
     }

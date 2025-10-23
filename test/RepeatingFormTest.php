@@ -433,4 +433,149 @@ class RepeatingFormTest extends TestCase {
     $this->assertInstanceOf(\Coroq\Form\FormItem\EmailInput::class, $item);
     $this->assertEquals('a@example.com', $item->getValue());
   }
+
+  // Additional coverage tests
+
+  public function testGetParsedValueWithMinItemCount() {
+    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new IntegerInput());
+    $repeating->setMinItemCount(3);
+
+    // No setValue called - getParsedValue should ensure minimum items
+    $parsed = $repeating->getParsedValue();
+    $this->assertEquals(3, count($parsed));
+    $this->assertNull($parsed[0]); // Empty values parse to null
+    $this->assertNull($parsed[1]);
+    $this->assertNull($parsed[2]);
+  }
+
+  public function testGetValueExpandsItemsToMinimum() {
+    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
+    $repeating->setMinItemCount(5);
+
+    // Manually add 2 items using addItem
+    $repeating->addItem('a@example.com');
+    $repeating->addItem('b@example.com');
+    $this->assertEquals(2, $repeating->count());
+
+    // Now call getValue() - should expand to 5 items while preserving existing 2
+    $values = $repeating->getValue();
+    $this->assertEquals(5, count($values));
+    $this->assertEquals('a@example.com', $values[0]);
+    $this->assertEquals('b@example.com', $values[1]);
+    $this->assertEquals('', $values[2]);
+    $this->assertEquals('', $values[3]);
+    $this->assertEquals('', $values[4]);
+  }
+
+  public function testGetParsedValueExpandsItemsToMinimum() {
+    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new IntegerInput());
+    $repeating->setMinItemCount(3);
+
+    // Manually create 1 item (simulating a scenario where items exist but < minItemCount)
+    $repeating->addItem('25');
+    $this->assertEquals(1, $repeating->count());
+
+    // getParsedValue should expand to minimum
+    $parsed = $repeating->getParsedValue();
+    $this->assertEquals(3, count($parsed));
+    $this->assertSame(25, $parsed[0]);
+    $this->assertNull($parsed[1]);
+    $this->assertNull($parsed[2]);
+  }
+
+  public function testGetFilledParsedValueWithNestedForms() {
+    $repeating = (new RepeatingForm())->setFactory(function(int $i) {
+      $form = new Form();
+      $form->age = new IntegerInput();
+      $form->active = new BooleanInput();
+      return $form;
+    });
+
+    $repeating->setValue([
+      ['age' => '25', 'active' => 'on'],
+      ['age' => '', 'active' => ''],
+      ['age' => '30', 'active' => ''],
+    ]);
+
+    $filled = $repeating->getFilledParsedValue();
+    $this->assertCount(2, $filled);
+    $this->assertIsArray($filled[0]);
+    $this->assertSame(25, $filled[0]['age']);
+    $this->assertTrue($filled[0]['active']);
+    $this->assertIsArray($filled[2]);
+    $this->assertSame(30, $filled[2]['age']);
+  }
+
+  public function testSetValueWithNonArrayValue() {
+    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
+    $repeating->setMinItemCount(2);
+
+    // setValue with null should treat as empty array
+    $repeating->setValue(null);
+    $this->assertEquals(2, $repeating->count()); // minItemCount
+    $this->assertEquals(['', ''], $repeating->getValue());
+
+    // setValue with string should treat as empty array
+    $repeating->setValue('not-an-array');
+    $this->assertEquals(2, $repeating->count());
+    $this->assertEquals(['', ''], $repeating->getValue());
+
+    // setValue with int should treat as empty array
+    $repeating->setValue(123);
+    $this->assertEquals(2, $repeating->count());
+    $this->assertEquals(['', ''], $repeating->getValue());
+  }
+
+  public function testSetValueWithoutFactoryThrowsException() {
+    $this->expectException(\LogicException::class);
+    $this->expectExceptionMessage('Factory not set');
+
+    $repeating = new RepeatingForm();
+    $repeating->setValue(['value']);
+  }
+
+  public function testAddItemWithoutFactoryThrowsException() {
+    $this->expectException(\LogicException::class);
+    $this->expectExceptionMessage('Factory not set');
+
+    $repeating = new RepeatingForm();
+    $repeating->addItem('value');
+  }
+
+  public function testIsDisabled() {
+    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
+
+    $this->assertFalse($repeating->isDisabled());
+
+    $repeating->setDisabled(true);
+    $this->assertTrue($repeating->isDisabled());
+
+    $repeating->setDisabled(false);
+    $this->assertFalse($repeating->isDisabled());
+  }
+
+  public function testIsRequired() {
+    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
+
+    // Default is required
+    $this->assertTrue($repeating->isRequired());
+
+    $repeating->setRequired(false);
+    $this->assertFalse($repeating->isRequired());
+
+    $repeating->setRequired(true);
+    $this->assertTrue($repeating->isRequired());
+  }
+
+  public function testIsReadOnly() {
+    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
+
+    $this->assertFalse($repeating->isReadOnly());
+
+    $repeating->setReadOnly(true);
+    $this->assertTrue($repeating->isReadOnly());
+
+    $repeating->setReadOnly(false);
+    $this->assertFalse($repeating->isReadOnly());
+  }
 }
