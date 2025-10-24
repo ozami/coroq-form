@@ -394,20 +394,14 @@ if ($form->validate()) {
 use Coroq\Form\Form;
 use Coroq\Form\FormItem\UrlInput;
 use Coroq\Form\FormItem\TelInput;
-use Coroq\Form\FormItem\PostalInput;
-use Coroq\Form\FormItem\KatakanaInput;
 
 class ProfileForm extends Form {
     public readonly UrlInput $website;
     public readonly TelInput $phone;
-    public readonly PostalInput $postal;
-    public readonly KatakanaInput $furigana;
 
     public function __construct() {
         $this->website = new UrlInput();
         $this->phone = new TelInput();
-        $this->postal = new PostalInput();
-        $this->furigana = new KatakanaInput();
     }
 }
 
@@ -420,8 +414,6 @@ echo $form->phone->getValue();   // "+819012345678" (E.164 format)
 
 $form->phone->setValue('090-1234-5678');
 echo $form->phone->getValue();   // "09012345678" (domestic, digits only)
-
-echo $form->furigana->getKatakana(); // Katakana string or null
 ```
 
 **TelInput** strips all formatting characters (spaces, hyphens, parentheses) but preserves a leading `+` for international E.164 format. It does NOT validate phone numbers - use libphonenumber for validation and formatting:
@@ -456,17 +448,16 @@ $formatted = $phoneUtil->format($number, PhoneNumberFormat::NATIONAL);
 use Coroq\Form\Form;
 use Coroq\Form\FormItem\TextInput;
 use Coroq\Form\FormItem\EmailInput;
-use Coroq\Form\FormItem\PostalInput;
 
 class AddressForm extends Form {
     public readonly TextInput $street;
     public readonly TextInput $city;
-    public readonly PostalInput $postal;
+    public readonly TextInput $postal;
 
     public function __construct() {
         $this->street = new TextInput();
         $this->city = new TextInput();
-        $this->postal = new PostalInput();
+        $this->postal = new TextInput();
     }
 }
 
@@ -597,17 +588,16 @@ RepeatingForm can contain other forms, including nested RepeatingForms:
 ```php
 use Coroq\Form\Form;
 use Coroq\Form\FormItem\TextInput;
-use Coroq\Form\FormItem\PostalInput;
 
 class AddressForm extends Form {
     public readonly TextInput $street;
     public readonly TextInput $city;
-    public readonly PostalInput $postal;
+    public readonly TextInput $postal;
 
     public function __construct() {
         $this->street = new TextInput();
         $this->city = new TextInput();
-        $this->postal = new PostalInput();
+        $this->postal = new TextInput();
     }
 }
 
@@ -1099,7 +1089,6 @@ The library provides these error types:
 
 **Type/Format Errors:**
 - `NotIntegerError`, `NotNumericError` - Type validation
-- `NotKatakanaError` - Character type validation
 - `PatternMismatchError` - Pattern validation failure
 
 **Selection Errors:**
@@ -1114,26 +1103,6 @@ The library provides these error types:
 
 **Tip:** Define messages for base error types (like `InvalidError`) as catch-alls, then optionally override specific subtypes for custom messages.
 
-### Optional: BasicErrorMessages
-
-The library includes `BasicErrorMessages` with default Japanese error messages. You can use it as a starting point:
-
-```php
-use Coroq\Form\ErrorMessageFormatter;
-use Coroq\Form\BasicErrorMessages;
-use Coroq\Form\Error\EmptyError;
-
-// Start with default Japanese messages
-$messages = BasicErrorMessages::get();
-
-// Override specific messages for your application
-$messages[EmptyError::class] = 'This field is required';
-
-$formatter = new ErrorMessageFormatter();
-$formatter->setMessages($messages);
-```
-
-**Note:** `BasicErrorMessages` is entirely optional. Most applications will define their own complete message set to match their language and tone.
 
 ## Form State
 
@@ -1451,7 +1420,7 @@ Type conversion by input:
 - **DateInput**: `getParsedValue()` → `DateTimeImmutable|null` (not string)
 - **BooleanInput**: `getParsedValue()` → `bool` (true/false, not "on"/""/)
 - **UrlInput**: `getParsedValue()` → validated `string|null`
-- **TelInput, PostalInput, KatakanaInput**: `getParsedValue()` → validated `string|null`
+- **TelInput**: `getParsedValue()` → validated `string|null`
 - **TextInput, Select, FileInput**: `getParsedValue()` → same as `getValue()`
 
 ## Complete Example
@@ -1463,7 +1432,9 @@ use Coroq\Form\FormItem\EmailInput;
 use Coroq\Form\FormItem\IntegerInput;
 use Coroq\Form\FormItem\Select;
 use Coroq\Form\ErrorMessageFormatter;
-use Coroq\Form\BasicErrorMessages;
+use Coroq\Form\Error\EmptyError;
+use Coroq\Form\Error\InvalidError;
+use Coroq\Form\Error\TooSmallError;
 
 class UserRegistrationForm extends Form {
     public readonly TextInput $name;
@@ -1497,7 +1468,13 @@ class UserRegistrationForm extends Form {
 
 // Setup error messages
 $formatter = new ErrorMessageFormatter();
-$formatter->setMessages(BasicErrorMessages::get());
+$formatter->setMessages([
+    EmptyError::class => 'This field is required',
+    InvalidError::class => 'Invalid value',  // Catch-all for Invalid* errors
+    TooSmallError::class => function(TooSmallError $error) {
+        return 'Minimum value is ' . $error->formItem->getMin();
+    },
+]);
 
 // Process form submission
 $form = new UserRegistrationForm();

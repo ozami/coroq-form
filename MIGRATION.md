@@ -76,8 +76,8 @@ $select = new Select();
 | `Input\Date` | `FormItem\DateInput` |
 | `Input\Tel` | `FormItem\TelInput` |
 | `Input\Url` | `FormItem\UrlInput` |
-| `Input\Postal` | `FormItem\PostalInput` |
-| `Input\Katakana` | `FormItem\KatakanaInput` |
+| `Input\Postal` | Removed - use `TextInput` with custom validation |
+| `Input\Katakana` | Removed - use `TextInput` with custom validation |
 | `Input\Select` | `FormItem\Select` |
 | `Input\MultiSelect` | `FormItem\MultiSelect` |
 | `Input\Computed` | `FormItem\Derived` |
@@ -234,7 +234,6 @@ Input::setDefaultErrorStringifier(function(Error $error) {
 
 ```php
 use Coroq\Form\ErrorMessageFormatter;
-use Coroq\Form\BasicErrorMessages;
 use Coroq\Form\Error\EmptyError;
 use Coroq\Form\Error\InvalidEmailError;
 use Coroq\Form\Error\TooLongError;
@@ -248,14 +247,15 @@ if ($form->email->hasError()) {
 
 // Format error messages
 $formatter = new ErrorMessageFormatter();
-$messages = BasicErrorMessages::get();  // Default Japanese messages
 
-// Customize messages
-$messages[EmptyError::class] = 'This field is required';
-$messages[InvalidEmailError::class] = 'Invalid email';
-$messages[TooLongError::class] = function(TooLongError $error) {
-    return 'Max ' . $error->formItem->getMaxLength() . ' characters';
-};
+// Define custom messages
+$messages = [
+    EmptyError::class => 'This field is required',
+    InvalidEmailError::class => 'Invalid email',
+    TooLongError::class => function(TooLongError $error) {
+        return 'Max ' . $error->formItem->getMaxLength() . ' characters';
+    },
+];
 
 $formatter->setMessages($messages);
 echo $formatter->format($form->email->getError());
@@ -274,7 +274,6 @@ echo $formatter->format($form->email->getError());
 | `err_not_int` | `\Coroq\Form\Error\NotIntegerError` |
 | `err_too_few` | `\Coroq\Form\Error\TooFewSelectionsError` |
 | `err_too_many` | `\Coroq\Form\Error\TooManySelectionsError` |
-| `err_not_katakana` | `\Coroq\Form\Error\NotKatakanaError` |
 
 **Migration:**
 
@@ -610,7 +609,7 @@ $form->setItem('age', (new Input\Integer())
 
 $address = new Form();
 $address->setItem('city', new Input\Text());
-$address->setItem('postal', new Input\Postal());
+$address->setItem('postal', new Input\Text());
 $form->setItem('address', $address);
 
 Input::setDefaultErrorStringifier(function(Error $error) {
@@ -641,19 +640,17 @@ use Coroq\Form\Form;
 use Coroq\Form\FormItem\TextInput;
 use Coroq\Form\FormItem\EmailInput;
 use Coroq\Form\FormItem\IntegerInput;
-use Coroq\Form\FormItem\PostalInput;
 use Coroq\Form\ErrorMessageFormatter;
-use Coroq\Form\BasicErrorMessages;
 use Coroq\Form\Error\EmptyError;
 use Coroq\Form\Error\InvalidError;
 
 class AddressForm extends Form {
     public readonly TextInput $city;
-    public readonly PostalInput $postal;
+    public readonly TextInput $postal;
 
     public function __construct() {
         $this->city = new TextInput();
-        $this->postal = new PostalInput();
+        $this->postal = new TextInput();
     }
 }
 
@@ -682,9 +679,10 @@ class UserForm extends Form {
 }
 
 $formatter = new ErrorMessageFormatter();
-$messages = BasicErrorMessages::get();
-$messages[EmptyError::class] = 'Required';
-$messages[InvalidError::class] = 'Invalid';
+$messages = [
+    EmptyError::class => 'Required',
+    InvalidError::class => 'Invalid',
+];
 $formatter->setMessages($messages);
 
 $form = new UserForm();
@@ -734,7 +732,7 @@ if ($form->validate()) {
 |-------|-------|
 | `$error->code` | `get_class($error)` or `$error instanceof \Coroq\Form\Error\EmptyError` |
 | `$input->getErrorString()` | `$formatter->format($error)` |
-| `Input::setDefaultErrorStringifier()` | `ErrorMessageFormatter` + `BasicErrorMessages` |
+| `Input::setDefaultErrorStringifier()` | `ErrorMessageFormatter` with custom message array |
 
 ---
 
