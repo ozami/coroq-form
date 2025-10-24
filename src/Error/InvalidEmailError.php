@@ -9,5 +9,5 @@ use Coroq\Form\FormItem\EmailInput;
  *
  * @property-read EmailInput $formItem
  */
-class InvalidEmailError extends Error {
+class InvalidEmailError extends InvalidError {
 }

@@ -9,5 +9,5 @@ use Coroq\Form\FormItem\DateInput;
  *
  * @property-read DateInput $formItem
  */
-class InvalidDateError extends Error {
+class InvalidDateError extends InvalidError {
 }

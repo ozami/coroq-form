@@ -9,5 +9,5 @@ use Coroq\Form\FormItem\UrlInput;
  *
  * @property-read UrlInput $formItem
  */
-class InvalidUrlError extends Error {
+class InvalidUrlError extends InvalidError {
 }

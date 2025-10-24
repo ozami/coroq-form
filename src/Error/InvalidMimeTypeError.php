@@ -9,5 +9,5 @@ use Coroq\Form\FormItem\FileInput;
  *
  * @property-read FileInput $formItem
  */
-class InvalidMimeTypeError extends Error {
+class InvalidMimeTypeError extends InvalidError {
 }

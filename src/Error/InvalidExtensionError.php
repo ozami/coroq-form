@@ -9,5 +9,5 @@ use Coroq\Form\FormItem\FileInput;
  *
  * @property-read FileInput $formItem
  */
-class InvalidExtensionError extends Error {
+class InvalidExtensionError extends InvalidError {
 }
