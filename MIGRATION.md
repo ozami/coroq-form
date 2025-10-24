@@ -12,7 +12,7 @@ Version 3.0.0 is a major rewrite with significant breaking changes. The core arc
 - Form API completely redesigned (property-based instead of array-based)
 - Error handling redesigned (Error classes instead of error codes)
 - New features: BooleanInput, FileInput, RepeatingForm, getParsedValue()
-- Removed methods: `getItem()`, `setItem()`, `getItemIn()`, `addItem()`, etc.
+- Removed methods: `setItem()`, `getItemIn()`, `addItem()`, etc.
 
 ---
 
@@ -54,12 +54,15 @@ $select = new Input\Select();
 **After (3.0.0):**
 ```php
 use Coroq\Form\Form;
-use Coroq\Form\FormItem;
+use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\IntegerInput;
+use Coroq\Form\FormItem\Select;
 
-$text = new FormItem\TextInput();
-$email = new FormItem\EmailInput();
-$integer = new FormItem\IntegerInput();
-$select = new FormItem\Select();
+$text = new TextInput();
+$email = new EmailInput();
+$integer = new IntegerInput();
+$select = new Select();
 ```
 
 **Migration:** Replace all `Input\*` imports with `FormItem\*` and update class names:
@@ -111,11 +114,16 @@ $city = $form->getItemIn('address/city');
 #### After (3.0.0): Property-Based API
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\IntegerInput;
+
 // Option 1: Dynamic properties (for temporary use)
 $form = new Form();
-$form->name = new FormItem\TextInput();
-$form->email = new FormItem\EmailInput();
-$form->age = new FormItem\IntegerInput();
+$form->name = new TextInput();
+$form->email = new EmailInput();
+$form->age = new IntegerInput();
 
 // Set values
 $form->setValue($_POST);
@@ -133,15 +141,20 @@ $city = $form->address->city;
 **Recommended in 3.0.0: Define Form Subclasses**
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\IntegerInput;
+
 class UserForm extends Form {
-    public readonly FormItem\TextInput $name;
-    public readonly FormItem\EmailInput $email;
-    public readonly FormItem\IntegerInput $age;
+    public readonly TextInput $name;
+    public readonly EmailInput $email;
+    public readonly IntegerInput $age;
 
     public function __construct() {
-        $this->name = new FormItem\TextInput();
-        $this->email = new FormItem\EmailInput();
-        $this->age = new FormItem\IntegerInput();
+        $this->name = new TextInput();
+        $this->email = new EmailInput();
+        $this->age = new IntegerInput();
     }
 }
 
@@ -178,8 +191,6 @@ The following methods have changed or have alternatives:
 | `getItems()` | Not public | Access properties directly |
 | `getEnabledItems()` | Not public | Internal use only |
 | `getFilled()` | `getFilledValue()` | Renamed for clarity |
-
-**Note:** `getItem(mixed $name)` is still available in `FormInterface`:
 
 ```php
 // Direct property access (recommended)
@@ -222,9 +233,11 @@ Input::setDefaultErrorStringifier(function(Error $error) {
 #### After (3.0.0): Error Classes
 
 ```php
-use Coroq\Form\Error;
 use Coroq\Form\ErrorMessageFormatter;
 use Coroq\Form\BasicErrorMessages;
+use Coroq\Form\Error\EmptyError;
+use Coroq\Form\Error\InvalidEmailError;
+use Coroq\Form\Error\TooLongError;
 
 $form->validate();
 
@@ -238,9 +251,9 @@ $formatter = new ErrorMessageFormatter();
 $messages = BasicErrorMessages::get();  // Default Japanese messages
 
 // Customize messages
-$messages[Error\EmptyError::class] = 'This field is required';
-$messages[Error\InvalidEmailError::class] = 'Invalid email';
-$messages[Error\TooLongError::class] = function(Error\TooLongError $error) {
+$messages[EmptyError::class] = 'This field is required';
+$messages[InvalidEmailError::class] = 'Invalid email';
+$messages[TooLongError::class] = function(TooLongError $error) {
     return 'Max ' . $error->formItem->getMaxLength() . ' characters';
 };
 
@@ -252,16 +265,16 @@ echo $formatter->format($form->email->getError());
 
 | 2.1.0 Error Code | 3.0.0 Error Class |
 |------------------|-------------------|
-| `err_empty` | `Error\EmptyError` |
-| `err_invalid` | `Error\InvalidError` |
-| `err_too_short` | `Error\TooShortError` |
-| `err_too_long` | `Error\TooLongError` |
-| `err_too_small` | `Error\TooSmallError` |
-| `err_too_large` | `Error\TooLargeError` |
-| `err_not_int` | `Error\NotIntegerError` |
-| `err_too_few` | `Error\TooFewSelectionsError` |
-| `err_too_many` | `Error\TooManySelectionsError` |
-| `err_not_katakana` | `Error\NotKatakanaError` |
+| `err_empty` | `\Coroq\Form\Error\EmptyError` |
+| `err_invalid` | `\Coroq\Form\Error\InvalidError` |
+| `err_too_short` | `\Coroq\Form\Error\TooShortError` |
+| `err_too_long` | `\Coroq\Form\Error\TooLongError` |
+| `err_too_small` | `\Coroq\Form\Error\TooSmallError` |
+| `err_too_large` | `\Coroq\Form\Error\TooLargeError` |
+| `err_not_int` | `\Coroq\Form\Error\NotIntegerError` |
+| `err_too_few` | `\Coroq\Form\Error\TooFewSelectionsError` |
+| `err_too_many` | `\Coroq\Form\Error\TooManySelectionsError` |
+| `err_not_katakana` | `\Coroq\Form\Error\NotKatakanaError` |
 
 **Migration:**
 
@@ -325,38 +338,40 @@ $form->setItem('full_name', $fullName);
 #### After (3.0.0): Use setValueCalculator() with Closure
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
 use Coroq\Form\FormItem\Derived;
 
 class UserForm extends Form {
-    public readonly FormItem\TextInput $firstName;
-    public readonly FormItem\TextInput $lastName;
+    public readonly TextInput $firstName;
+    public readonly TextInput $lastName;
     public readonly Derived $fullName;
 
     public function __construct() {
-        $this->firstName = new FormItem\TextInput();
-        $this->lastName = new FormItem\TextInput();
+        $this->firstName = new TextInput();
+        $this->lastName = new TextInput();
 
         // Note: Calculator receives spread arguments, not an array
         $this->fullName = (new Derived())
-            ->setValueCalculator(fn($first, $last) => trim($first . ' ' . $last))
             ->addSource($this->firstName)
-            ->addSource($this->lastName);
+            ->addSource($this->lastName)
+            ->setValueCalculator(fn($first, $last) => trim($first . ' ' . $last));
     }
 }
 ```
 
-**New in 3.0.0:** `Derived` also supports `setValidator()` for cross-field validation:
+`Derived` also supports `setValidator()` for cross-field validation:
 
 ```php
 // Password confirmation validation
 $this->passwordMatch = (new Derived())
-    ->setValidator(function($password, $confirm, $calculated) {
+    ->addSource($this->password)
+    ->addSource($this->passwordConfirm)
+    ->setValidator(function($password, $confirm) {
         return $password !== $confirm
             ? new PasswordMismatchError($this)
             : null;
-    })
-    ->addSource($this->password)
-    ->addSource($this->passwordConfirm);
+    });
 ```
 
 **Migration:**
@@ -392,16 +407,19 @@ $form->address->city
 ### 1. BooleanInput
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\BooleanInput;
+
 class RegistrationForm extends Form {
-    public readonly FormItem\BooleanInput $agreeToTerms;
-    public readonly FormItem\BooleanInput $newsletter;
+    public readonly BooleanInput $agreeToTerms;
+    public readonly BooleanInput $newsletter;
 
     public function __construct() {
         // Required boolean - must be checked
-        $this->agreeToTerms = new FormItem\BooleanInput();
+        $this->agreeToTerms = new BooleanInput();
 
         // Optional boolean
-        $this->newsletter = (new FormItem\BooleanInput())
+        $this->newsletter = (new BooleanInput())
             ->setRequired(false);
     }
 }
@@ -415,11 +433,14 @@ $form->newsletter->getBoolean();    // false
 ### 2. FileInput
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\FileInput;
+
 class UploadForm extends Form {
-    public readonly FormItem\FileInput $avatar;
+    public readonly FileInput $avatar;
 
     public function __construct() {
-        $this->avatar = (new FormItem\FileInput())
+        $this->avatar = (new FileInput())
             ->setRequired(false)
             ->setMaxSize(5 * 1024 * 1024)  // 5 MB
             ->setAllowedMimeTypes(['image/jpeg', 'image/png'])
@@ -443,14 +464,16 @@ if ($form->validate()) {
 For dynamic lists of form items (e.g., multiple email addresses):
 
 ```php
+use Coroq\Form\Form;
 use Coroq\Form\RepeatingForm;
+use Coroq\Form\FormItem\EmailInput;
 
 class ContactForm extends Form {
     public readonly RepeatingForm $emails;
 
     public function __construct() {
         $this->emails = (new RepeatingForm())->setFactory(function(int $index) {
-            $email = new FormItem\EmailInput();
+            $email = new EmailInput();
             $email->setRequired($index === 0); // First required, rest optional
             return $email;
         });
@@ -473,15 +496,20 @@ $form->emails->count();  // 3 (minItemCount enforced)
 Get properly typed values instead of strings:
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\IntegerInput;
+use Coroq\Form\FormItem\BooleanInput;
+use Coroq\Form\FormItem\DateInput;
+
 class UserForm extends Form {
-    public readonly FormItem\IntegerInput $age;
-    public readonly FormItem\BooleanInput $newsletter;
-    public readonly FormItem\DateInput $birthDate;
+    public readonly IntegerInput $age;
+    public readonly BooleanInput $newsletter;
+    public readonly DateInput $birthDate;
 
     public function __construct() {
-        $this->age = new FormItem\IntegerInput();
-        $this->newsletter = (new FormItem\BooleanInput())->setRequired(false);
-        $this->birthDate = new FormItem\DateInput();
+        $this->age = new IntegerInput();
+        $this->newsletter = (new BooleanInput())->setRequired(false);
+        $this->birthDate = new DateInput();
     }
 }
 
@@ -573,38 +601,42 @@ if ($form->validate()) {
 
 ```php
 use Coroq\Form\Form;
-use Coroq\Form\FormItem;
-use Coroq\Form\Error;
+use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\IntegerInput;
+use Coroq\Form\FormItem\PostalInput;
 use Coroq\Form\ErrorMessageFormatter;
 use Coroq\Form\BasicErrorMessages;
+use Coroq\Form\Error\EmptyError;
+use Coroq\Form\Error\InvalidError;
 
 class AddressForm extends Form {
-    public readonly FormItem\TextInput $city;
-    public readonly FormItem\PostalInput $postal;
+    public readonly TextInput $city;
+    public readonly PostalInput $postal;
 
     public function __construct() {
-        $this->city = new FormItem\TextInput();
-        $this->postal = new FormItem\PostalInput();
+        $this->city = new TextInput();
+        $this->postal = new PostalInput();
     }
 }
 
 class UserForm extends Form {
-    public readonly FormItem\TextInput $username;
-    public readonly FormItem\EmailInput $email;
-    public readonly FormItem\IntegerInput $age;
+    public readonly TextInput $username;
+    public readonly EmailInput $email;
+    public readonly IntegerInput $age;
     public readonly AddressForm $address;
 
     public function __construct() {
-        $this->username = (new FormItem\TextInput())
+        $this->username = (new TextInput())
             ->setLabel('Username')
             ->setRequired(true)
             ->setMinLength(3);
 
-        $this->email = (new FormItem\EmailInput())
+        $this->email = (new EmailInput())
             ->setLabel('Email')
             ->setRequired(true);
 
-        $this->age = (new FormItem\IntegerInput())
+        $this->age = (new IntegerInput())
             ->setLabel('Age')
             ->setMin(13);
 
@@ -614,8 +646,8 @@ class UserForm extends Form {
 
 $formatter = new ErrorMessageFormatter();
 $messages = BasicErrorMessages::get();
-$messages[Error\EmptyError::class] = 'Required';
-$messages[Error\InvalidError::class] = 'Invalid';
+$messages[EmptyError::class] = 'Required';
+$messages[InvalidError::class] = 'Invalid';
 $formatter->setMessages($messages);
 
 $form = new UserForm();
@@ -663,7 +695,7 @@ if ($form->validate()) {
 
 | 2.1.0 | 3.0.0 |
 |-------|-------|
-| `$error->code` | `get_class($error)` or `$error instanceof Error\EmptyError` |
+| `$error->code` | `get_class($error)` or `$error instanceof \Coroq\Form\Error\EmptyError` |
 | `$input->getErrorString()` | `$formatter->format($error)` |
 | `Input::setDefaultErrorStringifier()` | `ErrorMessageFormatter` + `BasicErrorMessages` |
 
@@ -694,4 +726,3 @@ If you encounter issues during migration:
 
 1. Check the [README.md](README.md) for complete 3.0.0 documentation
 2. Review the test files in `test/` for usage examples
-3. Open an issue on GitHub with your migration question

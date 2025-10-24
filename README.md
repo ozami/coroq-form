@@ -12,15 +12,16 @@ composer require coroq/form
 
 ```php
 use Coroq\Form\Form;
-use Coroq\Form\FormItem;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\TextInput;
 
 class LoginForm extends Form {
-    public readonly FormItem\EmailInput $email;
-    public readonly FormItem\TextInput $password;
+    public readonly EmailInput $email;
+    public readonly TextInput $password;
 
     public function __construct() {
-        $this->email = new FormItem\EmailInput();
-        $this->password = new FormItem\TextInput();
+        $this->email = new EmailInput();
+        $this->password = new TextInput();
     }
 }
 
@@ -54,28 +55,31 @@ Define form classes with typed readonly properties for IDE support:
 
 ```php
 use Coroq\Form\Form;
-use Coroq\Form\FormItem;
+use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\IntegerInput;
+use Coroq\Form\FormItem\Select;
 
 class UserRegistrationForm extends Form {
-    public readonly FormItem\TextInput $name;
-    public readonly FormItem\EmailInput $email;
-    public readonly FormItem\IntegerInput $age;
-    public readonly FormItem\Select $country;
+    public readonly TextInput $name;
+    public readonly EmailInput $email;
+    public readonly IntegerInput $age;
+    public readonly Select $country;
 
     public function __construct() {
-        $this->name = (new FormItem\TextInput())
+        $this->name = (new TextInput())
             ->setLabel('Name')
             ->setMaxLength(100);
 
-        $this->email = (new FormItem\EmailInput())
+        $this->email = (new EmailInput())
             ->setLabel('Email');
 
-        $this->age = (new FormItem\IntegerInput())
+        $this->age = (new IntegerInput())
             ->setLabel('Age')
             ->setMin(18)
             ->setMax(120);
 
-        $this->country = (new FormItem\Select())
+        $this->country = (new Select())
             ->setLabel('Country')
             ->setOptions([
                 'us' => 'United States',
@@ -102,9 +106,13 @@ if ($form->validate()) {
 For dynamic or one-off forms, you can use Form directly:
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\TextInput;
+
 $form = new Form();
-$form->email = new FormItem\EmailInput();
-$form->name = new FormItem\TextInput();
+$form->email = new EmailInput();
+$form->name = new TextInput();
 
 $form->setValue($_POST);
 $form->validate();
@@ -115,20 +123,23 @@ $form->validate();
 ### Text Input
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
 class ProfileForm extends Form {
-    public readonly FormItem\TextInput $name;
-    public readonly FormItem\TextInput $bio;
+    public readonly TextInput $name;
+    public readonly TextInput $bio;
 
     public function __construct() {
-        $this->name = (new FormItem\TextInput())
+        $this->name = (new TextInput())
             ->setMinLength(2)
             ->setMaxLength(100)
-            ->setTrim(FormItem\TextInput::BOTH)     // LEFT, RIGHT, BOTH, or null
-            ->setCase(FormItem\TextInput::TITLE)    // UPPER, LOWER, TITLE
+            ->setTrim(TextInput::BOTH)     // LEFT, RIGHT, BOTH, or null
+            ->setCase(TextInput::TITLE)    // UPPER, LOWER, TITLE
             ->setMb('KV')                      // mb_convert_kana option
             ->setPattern('/^[A-Za-z ]+$/');    // Regex validation
 
-        $this->bio = (new FormItem\TextInput())
+        $this->bio = (new TextInput())
             ->setMultiline(true)
             ->setEol("\n")                     // Normalize line endings
             ->setMaxLength(1000);
@@ -139,11 +150,14 @@ class ProfileForm extends Form {
 ### Email Input
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\EmailInput;
+
 class ContactForm extends Form {
-    public readonly FormItem\EmailInput $email;
+    public readonly EmailInput $email;
 
     public function __construct() {
-        $this->email = new FormItem\EmailInput();
+        $this->email = new EmailInput();
         // Note: setLowerCaseDomain(true) is also default
     }
 }
@@ -157,11 +171,14 @@ echo $form->email->getEmail();    // "User@example.com" or null if invalid
 ### Select Input
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\Select;
+
 class SettingsForm extends Form {
-    public readonly FormItem\Select $country;
+    public readonly Select $country;
 
     public function __construct() {
-        $this->country = (new FormItem\Select())
+        $this->country = (new Select())
             ->setOptions([
                 'us' => 'United States',
                 'jp' => 'Japan',
@@ -179,11 +196,14 @@ echo $form->country->getSelectedLabel();  // "Japan"
 ### Multi-Select Input
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\MultiSelect;
+
 class SurveyForm extends Form {
-    public readonly FormItem\MultiSelect $hobbies;
+    public readonly MultiSelect $hobbies;
 
     public function __construct() {
-        $this->hobbies = (new FormItem\MultiSelect())
+        $this->hobbies = (new MultiSelect())
             ->setOptions([
                 'sports' => 'Sports',
                 'music' => 'Music',
@@ -204,16 +224,20 @@ print_r($form->hobbies->getSelectedLabel()); // ['Sports', 'Music']
 ### Number Inputs
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\NumberInput;
+use Coroq\Form\FormItem\IntegerInput;
+
 class ProductForm extends Form {
-    public readonly FormItem\NumberInput $price;
-    public readonly FormItem\IntegerInput $quantity;
+    public readonly NumberInput $price;
+    public readonly IntegerInput $quantity;
 
     public function __construct() {
-        $this->price = (new FormItem\NumberInput())
+        $this->price = (new NumberInput())
             ->setMin(0.01)
             ->setMax(999999.99);
 
-        $this->quantity = (new FormItem\IntegerInput())
+        $this->quantity = (new IntegerInput())
             ->setMin(1)
             ->setMax(100);
     }
@@ -229,11 +253,14 @@ echo $form->quantity->getInteger();      // 42 or null
 ### Date Input
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\DateInput;
+
 class EventForm extends Form {
-    public readonly FormItem\DateInput $eventDate;
+    public readonly DateInput $eventDate;
 
     public function __construct() {
-        $this->eventDate = new FormItem\DateInput();
+        $this->eventDate = new DateInput();
     }
 }
 
@@ -247,16 +274,19 @@ $dti = $form->eventDate->getDateTimeImmutable(); // DateTimeImmutable or null
 ### Boolean Input
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\BooleanInput;
+
 class RegistrationForm extends Form {
-    public readonly FormItem\BooleanInput $agreeToTerms;
-    public readonly FormItem\BooleanInput $newsletter;
+    public readonly BooleanInput $agreeToTerms;
+    public readonly BooleanInput $newsletter;
 
     public function __construct() {
         // Required boolean - user must accept (value must be truthy)
-        $this->agreeToTerms = new FormItem\BooleanInput();
+        $this->agreeToTerms = new BooleanInput();
 
         // Optional boolean - can be true or false
-        $this->newsletter = (new FormItem\BooleanInput())
+        $this->newsletter = (new BooleanInput())
             ->setRequired(false);
     }
 }
@@ -289,20 +319,23 @@ Everything else including `'0'`, `0`, `'off'`, `'no'` is considered "not empty" 
 FileInput validates files by their path. It checks file size, MIME type, and extension. This library **does not** handle HTTP file uploads ($_FILES) - that should be done by your HTTP layer.
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\FileInput;
+
 class UploadForm extends Form {
-    public readonly FormItem\FileInput $avatar;
-    public readonly FormItem\FileInput $document;
+    public readonly FileInput $avatar;
+    public readonly FileInput $document;
 
     public function __construct() {
         // Image upload with size and type restrictions
-        $this->avatar = (new FormItem\FileInput())
+        $this->avatar = (new FileInput())
             ->setRequired(false)  // Usually optional
             ->setMaxSize(5 * 1024 * 1024)  // 5 MB
             ->setAllowedMimeTypes(['image/jpeg', 'image/png', 'image/gif'])
             ->setAllowedExtensions(['jpg', 'jpeg', 'png', 'gif']);
 
         // Document upload
-        $this->document = (new FormItem\FileInput())
+        $this->document = (new FileInput())
             ->setRequired(false)
             ->setMaxSize(10 * 1024 * 1024)  // 10 MB
             ->setMinSize(1024)  // 1 KB minimum
@@ -329,9 +362,13 @@ FileInput works with file paths (strings), not $_FILES arrays. For tracking uplo
 
 Example upload flow:
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\FileInput;
+use Coroq\Form\FormItem\TextInput;
+
 class ProfileForm extends Form {
-    public readonly FormItem\FileInput $newAvatar;  // Optional - for new uploads
-    public readonly FormItem\TextInput $avatarId;   // Required - tracks saved file
+    public readonly FileInput $newAvatar;  // Optional - for new uploads
+    public readonly TextInput $avatarId;   // Required - tracks saved file
 }
 
 // First submit: user uploads new file
@@ -354,17 +391,23 @@ if ($form->validate()) {
 ### Other Input Types
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\UrlInput;
+use Coroq\Form\FormItem\TelInput;
+use Coroq\Form\FormItem\PostalInput;
+use Coroq\Form\FormItem\KatakanaInput;
+
 class ProfileForm extends Form {
-    public readonly FormItem\UrlInput $website;
-    public readonly FormItem\TelInput $phone;
-    public readonly FormItem\PostalInput $postal;
-    public readonly FormItem\KatakanaInput $furigana;
+    public readonly UrlInput $website;
+    public readonly TelInput $phone;
+    public readonly PostalInput $postal;
+    public readonly KatakanaInput $furigana;
 
     public function __construct() {
-        $this->website = new FormItem\UrlInput();
-        $this->phone = new FormItem\TelInput();
-        $this->postal = new FormItem\PostalInput();
-        $this->furigana = new FormItem\KatakanaInput();
+        $this->website = new UrlInput();
+        $this->phone = new TelInput();
+        $this->postal = new PostalInput();
+        $this->furigana = new KatakanaInput();
     }
 }
 
@@ -378,26 +421,31 @@ echo $form->furigana->getKatakana(); // Katakana string or null
 ## Nested Forms
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\PostalInput;
+
 class AddressForm extends Form {
-    public readonly FormItem\TextInput $street;
-    public readonly FormItem\TextInput $city;
-    public readonly FormItem\PostalInput $postal;
+    public readonly TextInput $street;
+    public readonly TextInput $city;
+    public readonly PostalInput $postal;
 
     public function __construct() {
-        $this->street = new FormItem\TextInput();
-        $this->city = new FormItem\TextInput();
-        $this->postal = new FormItem\PostalInput();
+        $this->street = new TextInput();
+        $this->city = new TextInput();
+        $this->postal = new PostalInput();
     }
 }
 
 class UserForm extends Form {
-    public readonly FormItem\TextInput $name;
-    public readonly FormItem\EmailInput $email;
+    public readonly TextInput $name;
+    public readonly EmailInput $email;
     public readonly AddressForm $address;
 
     public function __construct() {
-        $this->name = new FormItem\TextInput();
-        $this->email = new FormItem\EmailInput();
+        $this->name = new TextInput();
+        $this->email = new EmailInput();
         $this->address = new AddressForm();
     }
 }
@@ -444,14 +492,16 @@ if ($addressForm instanceof FormInterface) {
 `RepeatingForm` manages dynamic lists of form items using a factory pattern:
 
 ```php
+use Coroq\Form\Form;
 use Coroq\Form\RepeatingForm;
+use Coroq\Form\FormItem\EmailInput;
 
 class ContactForm extends Form {
     public readonly RepeatingForm $emails;
 
     public function __construct() {
         $this->emails = (new RepeatingForm())->setFactory(function(int $index) {
-            $email = new FormItem\EmailInput();
+            $email = new EmailInput();
             $email->setRequired($index === 0);
             $email->setLabel($index === 0 ? 'Primary Email' : 'Additional Email');
             return $email;
@@ -486,9 +536,12 @@ if ($form->validate()) {
 The factory function receives an index parameter:
 
 ```php
+use Coroq\Form\RepeatingForm;
+use Coroq\Form\FormItem\TelInput;
+
 // Complex business logic
 $phoneNumbers = (new RepeatingForm())->setFactory(function(int $index) {
-    $phone = new FormItem\TelInput();
+    $phone = new TelInput();
 
     if ($index === 0) {
         $phone->setLabel('Primary Phone')->setRequired(true);
@@ -510,15 +563,19 @@ $phoneNumbers->setMaxItemCount(10);  // Max 10 total
 RepeatingForm can contain other forms, including nested RepeatingForms:
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\FormItem\PostalInput;
+
 class AddressForm extends Form {
-    public readonly FormItem\TextInput $street;
-    public readonly FormItem\TextInput $city;
-    public readonly FormItem\PostalInput $postal;
+    public readonly TextInput $street;
+    public readonly TextInput $city;
+    public readonly PostalInput $postal;
 
     public function __construct() {
-        $this->street = new FormItem\TextInput();
-        $this->city = new FormItem\TextInput();
-        $this->postal = new FormItem\PostalInput();
+        $this->street = new TextInput();
+        $this->city = new TextInput();
+        $this->postal = new PostalInput();
     }
 }
 
@@ -554,7 +611,10 @@ echo $form->addresses->getItem(1)->city->getValue();    // 'Osaka'
 Items can be added programmatically:
 
 ```php
-$emails = (new RepeatingForm())->setFactory(fn($i) => new FormItem\EmailInput());
+use Coroq\Form\RepeatingForm;
+use Coroq\Form\FormItem\EmailInput;
+
+$emails = (new RepeatingForm())->setFactory(fn($i) => new EmailInput());
 $emails->addItem('user1@example.com');
 $emails->addItem('user2@example.com');
 echo $emails->count();  // 2
@@ -575,16 +635,18 @@ Derived inputs are special form items that depend on other form items. They can:
 ### Basic Example: Calculated Values
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
 use Coroq\Form\FormItem\Derived;
 
 class UserForm extends Form {
-    public readonly FormItem\TextInput $firstName;
-    public readonly FormItem\TextInput $lastName;
+    public readonly TextInput $firstName;
+    public readonly TextInput $lastName;
     public readonly Derived $fullName;
 
     public function __construct() {
-        $this->firstName = new FormItem\TextInput();
-        $this->lastName = new FormItem\TextInput();
+        $this->firstName = new TextInput();
+        $this->lastName = new TextInput();
 
         // Derived field calculates value from sources
         $this->fullName = (new Derived())
@@ -610,14 +672,19 @@ echo $form->fullName->getValue(); // null
 ### More Calculation Examples
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\NumberInput;
+use Coroq\Form\FormItem\IntegerInput;
+use Coroq\Form\FormItem\Derived;
+
 class OrderForm extends Form {
-    public readonly FormItem\NumberInput $price;
-    public readonly FormItem\IntegerInput $quantity;
+    public readonly NumberInput $price;
+    public readonly IntegerInput $quantity;
     public readonly Derived $total;
 
     public function __construct() {
-        $this->price = new FormItem\NumberInput();
-        $this->quantity = new FormItem\IntegerInput();
+        $this->price = new NumberInput();
+        $this->quantity = new IntegerInput();
 
         // Calculate total price
         $this->total = (new Derived())
@@ -637,15 +704,20 @@ Use `setValidator()` to validate relationships between fields. The validator rec
 The validator returns an `Error` object if invalid, or `null` if valid.
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\FormItem\Derived;
+use Coroq\Form\Error\InvalidError;
+
 class RegistrationForm extends Form {
-    public readonly FormItem\TextInput $password;
-    public readonly FormItem\TextInput $passwordConfirm;
+    public readonly TextInput $password;
+    public readonly TextInput $passwordConfirm;
     public readonly Derived $passwordMatch;
 
     public function __construct() {
-        $this->password = (new FormItem\TextInput())
+        $this->password = (new TextInput())
             ->setMinLength(8);
-        $this->passwordConfirm = new FormItem\TextInput();
+        $this->passwordConfirm = new TextInput();
 
         // Validate that passwords match (no value calculator needed)
         $this->passwordMatch = (new Derived())
@@ -654,7 +726,7 @@ class RegistrationForm extends Form {
                 // $confirm = source 2 value
                 // $calculated = null (no setValueCalculator)
                 return $password !== $confirm
-                    ? new Error\InvalidError($this)
+                    ? new InvalidError($this)
                     : null;
             })
             ->addSource($this->password)
@@ -682,14 +754,19 @@ if (!$form->validate()) {
 You can use both `setValueCalculator()` and `setValidator()` together:
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\FormItem\Derived;
+use Coroq\Form\Error\TooLongError;
+
 class ProfileForm extends Form {
-    public readonly FormItem\TextInput $firstName;
-    public readonly FormItem\TextInput $lastName;
+    public readonly TextInput $firstName;
+    public readonly TextInput $lastName;
     public readonly Derived $displayName;
 
     public function __construct() {
-        $this->firstName = new FormItem\TextInput();
-        $this->lastName = new FormItem\TextInput();
+        $this->firstName = new TextInput();
+        $this->lastName = new TextInput();
 
         // Calculate display name and validate its length
         $this->displayName = (new Derived())
@@ -699,7 +776,7 @@ class ProfileForm extends Form {
                 // $last = source 2 value
                 // $calculated = the computed value from setValueCalculator
                 return strlen($calculated) > 50
-                    ? new Error\TooLongError($this)
+                    ? new TooLongError($this)
                     : null;
             })
             ->addSource($this->firstName)
@@ -721,14 +798,20 @@ $form->validate(); // Fails - displayName has TooLongError
 Derived inputs can also track external validation results (e.g., from API calls):
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\FormItem\Derived;
+use Coroq\Form\Error\InvalidError;
+
 class LoginForm extends Form {
-    public readonly FormItem\EmailInput $email;
-    public readonly FormItem\TextInput $password;
+    public readonly EmailInput $email;
+    public readonly TextInput $password;
     public readonly Derived $authResult;
 
     public function __construct() {
-        $this->email = new FormItem\EmailInput();
-        $this->password = new FormItem\TextInput();
+        $this->email = new EmailInput();
+        $this->password = new TextInput();
         // No calculator or validator - just a placeholder for external errors
         $this->authResult = new Derived();
     }
@@ -742,7 +825,7 @@ if ($form->validate()) {
     // Check credentials with external service
     if (!$authService->authenticate($form->email->getValue(), $form->password->getValue())) {
         // Set error on the derived field
-        $form->authResult->setError(new Error\InvalidError($form->authResult));
+        $form->authResult->setError(new InvalidError($form->authResult));
     }
 }
 
@@ -756,13 +839,17 @@ if ($form->hasError()) {
 ## Validation
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\IntegerInput;
+
 class LoginForm extends Form {
-    public readonly FormItem\EmailInput $email;
-    public readonly FormItem\IntegerInput $age;
+    public readonly EmailInput $email;
+    public readonly IntegerInput $age;
 
     public function __construct() {
-        $this->email = new FormItem\EmailInput();
-        $this->age = (new FormItem\IntegerInput())->setMin(18);
+        $this->email = new EmailInput();
+        $this->age = (new IntegerInput())->setMin(18);
     }
 }
 
@@ -799,16 +886,18 @@ Use `ErrorMessageFormatter` to convert errors to readable messages:
 ```php
 use Coroq\Form\ErrorMessageFormatter;
 use Coroq\Form\BasicErrorMessages;
-use Coroq\Form\Error;
+use Coroq\Form\Error\EmptyError;
+use Coroq\Form\Error\InvalidEmailError;
+use Coroq\Form\Error\TooLongError;
 
 // Start with default Japanese messages
 $formatter = new ErrorMessageFormatter();
 $messages = BasicErrorMessages::get();
 
 // Customize specific messages
-$messages[Error\EmptyError::class] = 'This field is required';
-$messages[Error\InvalidEmailError::class] = 'Please enter a valid email address';
-$messages[Error\TooLongError::class] = function(Error\TooLongError $error) {
+$messages[EmptyError::class] = 'This field is required';
+$messages[InvalidEmailError::class] = 'Please enter a valid email address';
+$messages[TooLongError::class] = function(TooLongError $error) {
     return 'Maximum ' . $error->formItem->getMaxLength() . ' characters allowed';
 };
 
@@ -853,13 +942,16 @@ Form items have three state flags that control their behavior:
 - `setRequired(false)` - If the entire form is empty, validation passes without checking items
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
 class ProfileForm extends Form {
-    public readonly FormItem\TextInput $name;
-    public readonly FormItem\TextInput $nickname;
+    public readonly TextInput $name;
+    public readonly TextInput $nickname;
 
     public function __construct() {
-        $this->name = new FormItem\TextInput();  // Required (default)
-        $this->nickname = (new FormItem\TextInput())
+        $this->name = new TextInput();  // Required (default)
+        $this->nickname = (new TextInput())
             ->setRequired(false);  // Optional
     }
 }
@@ -872,13 +964,16 @@ $form->validate();
 
 **Form-level example:**
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
 class AddressForm extends Form {
-    public readonly FormItem\TextInput $street;
-    public readonly FormItem\TextInput $city;
+    public readonly TextInput $street;
+    public readonly TextInput $city;
 
     public function __construct() {
-        $this->street = new FormItem\TextInput();
-        $this->city = new FormItem\TextInput();
+        $this->street = new TextInput();
+        $this->city = new TextInput();
         $this->setRequired(false);  // Make entire form optional
     }
 }
@@ -899,15 +994,18 @@ $form->validate();  // Passes! Empty optional form skips item validation
 - Items are included in `getValue()` and `validate()`
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
 class UserForm extends Form {
-    public readonly FormItem\TextInput $id;
-    public readonly FormItem\TextInput $name;
+    public readonly TextInput $id;
+    public readonly TextInput $name;
 
     public function __construct() {
-        $this->id = (new FormItem\TextInput())
+        $this->id = (new TextInput())
             ->setValue('12345')
             ->setReadOnly(true);
-        $this->name = new FormItem\TextInput();
+        $this->name = new TextInput();
     }
 }
 
@@ -921,11 +1019,14 @@ $form->validate();             // Both items are validated
 
 **Form-level example:**
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
 class DisplayForm extends Form {
-    public readonly FormItem\TextInput $field;
+    public readonly TextInput $field;
 
     public function __construct() {
-        $this->field = (new FormItem\TextInput())->setValue('fixed');
+        $this->field = (new TextInput())->setValue('fixed');
         $this->setReadOnly(true);  // Entire form is read-only
     }
 }
@@ -947,13 +1048,16 @@ echo $form->field->getValue();  // "fixed"
 - Useful for conditionally hiding entire form sections
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
 class OrderForm extends Form {
-    public readonly FormItem\TextInput $customerName;
-    public readonly FormItem\TextInput $legacyField;
+    public readonly TextInput $customerName;
+    public readonly TextInput $legacyField;
 
     public function __construct() {
-        $this->customerName = new FormItem\TextInput();
-        $this->legacyField = (new FormItem\TextInput())
+        $this->customerName = new TextInput();
+        $this->legacyField = (new TextInput())
             ->setDisabled(true);
     }
 }
@@ -971,13 +1075,16 @@ $values = $form->getValue();
 
 **Form-level example:**
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
 class CheckoutForm extends Form {
-    public readonly FormItem\TextInput $name;
+    public readonly TextInput $name;
     public readonly AddressForm $billing;
     public readonly AddressForm $shipping;
 
     public function __construct() {
-        $this->name = new FormItem\TextInput();
+        $this->name = new TextInput();
         $this->billing = new AddressForm();
         $this->shipping = new AddressForm();
     }
@@ -1019,15 +1126,20 @@ $values = $form->getValue();
 ## getValue() vs getFilledValue()
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\TelInput;
+
 class ContactForm extends Form {
-    public readonly FormItem\TextInput $name;
-    public readonly FormItem\EmailInput $email;
-    public readonly FormItem\TelInput $phone;
+    public readonly TextInput $name;
+    public readonly EmailInput $email;
+    public readonly TelInput $phone;
 
     public function __construct() {
-        $this->name = new FormItem\TextInput();
-        $this->email = new FormItem\EmailInput();
-        $this->phone = new FormItem\TelInput();
+        $this->name = new TextInput();
+        $this->email = new EmailInput();
+        $this->phone = new TelInput();
     }
 }
 
@@ -1055,19 +1167,26 @@ $db->insert('users', $form->getFilledValue());
 `getParsedValue()` and `getFilledParsedValue()` return parsed values with proper PHP types instead of raw strings:
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\IntegerInput;
+use Coroq\Form\FormItem\DateInput;
+use Coroq\Form\FormItem\BooleanInput;
+use Coroq\Form\FormItem\TextInput;
+
 class UserForm extends Form {
-    public readonly FormItem\EmailInput $email;
-    public readonly FormItem\IntegerInput $age;
-    public readonly FormItem\DateInput $birthDate;
-    public readonly FormItem\BooleanInput $newsletter;
-    public readonly FormItem\TextInput $notes;
+    public readonly EmailInput $email;
+    public readonly IntegerInput $age;
+    public readonly DateInput $birthDate;
+    public readonly BooleanInput $newsletter;
+    public readonly TextInput $notes;
 
     public function __construct() {
-        $this->email = new FormItem\EmailInput();
-        $this->age = (new FormItem\IntegerInput())->setRequired(false);
-        $this->birthDate = new FormItem\DateInput();
-        $this->newsletter = (new FormItem\BooleanInput())->setRequired(false);
-        $this->notes = (new FormItem\TextInput())->setRequired(false);
+        $this->email = new EmailInput();
+        $this->age = (new IntegerInput())->setRequired(false);
+        $this->birthDate = new DateInput();
+        $this->newsletter = (new BooleanInput())->setRequired(false);
+        $this->notes = (new TextInput())->setRequired(false);
     }
 }
 
@@ -1131,31 +1250,34 @@ Type conversion by input:
 
 ```php
 use Coroq\Form\Form;
-use Coroq\Form\FormItem;
+use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\IntegerInput;
+use Coroq\Form\FormItem\Select;
 use Coroq\Form\ErrorMessageFormatter;
 use Coroq\Form\BasicErrorMessages;
 
 class UserRegistrationForm extends Form {
-    public readonly FormItem\TextInput $name;
-    public readonly FormItem\EmailInput $email;
-    public readonly FormItem\IntegerInput $age;
-    public readonly FormItem\Select $country;
+    public readonly TextInput $name;
+    public readonly EmailInput $email;
+    public readonly IntegerInput $age;
+    public readonly Select $country;
 
     public function __construct() {
-        $this->name = (new FormItem\TextInput())
+        $this->name = (new TextInput())
             ->setLabel('Name')
             ->setMaxLength(100);
 
-        $this->email = (new FormItem\EmailInput())
+        $this->email = (new EmailInput())
             ->setLabel('Email');
 
-        $this->age = (new FormItem\IntegerInput())
+        $this->age = (new IntegerInput())
             ->setLabel('Age')
             ->setRequired(false)  // Make optional
             ->setMin(18)
             ->setMax(120);
 
-        $this->country = (new FormItem\Select())
+        $this->country = (new Select())
             ->setLabel('Country')
             ->setOptions([
                 'us' => 'United States',
@@ -1298,8 +1420,11 @@ function generateHtmlInput(FormItemInterface $input, string $name): string {
 ### Form
 
 ```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
 class MyForm extends Form {
-    public readonly FormItem\TextInput $field;
+    public readonly TextInput $field;
     // Define form items as typed readonly properties
 }
 
@@ -1335,7 +1460,9 @@ $isEmpty = $form->isEmpty();
 All input types extend `Input` and support:
 
 ```php
-$input = new FormItem\TextInput();
+use Coroq\Form\FormItem\TextInput;
+
+$input = new TextInput();
 
 // Values
 $input->setValue(mixed $value);
@@ -1364,7 +1491,9 @@ $isDisabled = $input->isDisabled();
 ### Text Input
 
 ```php
-$text = new FormItem\TextInput();
+use Coroq\Form\FormItem\TextInput;
+
+$text = new TextInput();
 $text->setMinLength(int);
 $text->setMaxLength(int);
 $text->setPattern(string);               // Regex
@@ -1379,11 +1508,14 @@ $text->setNoControl(bool);
 ### Select/MultiSelect
 
 ```php
-$select = new FormItem\Select();
+use Coroq\Form\FormItem\Select;
+use Coroq\Form\FormItem\MultiSelect;
+
+$select = new Select();
 $select->setOptions(array);
 $label = $select->getSelectedLabel();    // string|null
 
-$multi = new FormItem\MultiSelect();
+$multi = new MultiSelect();
 $multi->setOptions(array);
 $multi->setMinCount(int);
 $multi->setMaxCount(int);
@@ -1393,12 +1525,15 @@ $labels = $multi->getSelectedLabel();    // array
 ### Number Inputs
 
 ```php
-$number = new FormItem\NumberInput();
+use Coroq\Form\FormItem\NumberInput;
+use Coroq\Form\FormItem\IntegerInput;
+
+$number = new NumberInput();
 $number->setMin(int|float);
 $number->setMax(int|float);
 $value = $number->getNumber();           // float|null
 
-$int = new FormItem\IntegerInput();
+$int = new IntegerInput();
 $int->setMin(int);
 $int->setMax(int);
 $value = $int->getInteger();             // int|null
@@ -1407,7 +1542,9 @@ $value = $int->getInteger();             // int|null
 ### Boolean Input
 
 ```php
-$bool = new FormItem\BooleanInput();
+use Coroq\Form\FormItem\BooleanInput;
+
+$bool = new BooleanInput();
 $value = $bool->getBoolean();            // bool (true if not empty, false if empty)
 // Note: Only '', null, and false are considered empty
 ```
@@ -1415,7 +1552,9 @@ $value = $bool->getBoolean();            // bool (true if not empty, false if em
 ### File Input
 
 ```php
-$file = new FormItem\FileInput();
+use Coroq\Form\FormItem\FileInput;
+
+$file = new FileInput();
 $file->setMaxSize(int);                  // Max file size in bytes
 $file->setMinSize(int);                  // Min file size in bytes
 $file->setAllowedMimeTypes(array);       // e.g., ['image/jpeg', 'image/png']
@@ -1428,10 +1567,11 @@ $path = $file->getValue();               // string|null - file path
 
 ```php
 use Coroq\Form\RepeatingForm;
+use Coroq\Form\FormItem\EmailInput;
 
 // Create with factory
 $repeating = (new RepeatingForm())->setFactory(function(int $index) {
-    return (new FormItem\EmailInput())->setRequired($index === 0);
+    return (new EmailInput())->setRequired($index === 0);
 });
 
 // Structural constraints
