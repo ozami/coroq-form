@@ -545,6 +545,43 @@ $filled = $form->getFilledParsedValue();
 // ['age' => 30]  // Only non-empty, with type conversion
 ```
 
+### 6. TelInput Now Preserves Leading `+`
+
+**Before (2.1.0):**
+```php
+$phone = new TelInput();
+$phone->setValue('+81-90-1234-5678');
+echo $phone->getValue();  // "819012345678" (+ was stripped)
+```
+
+**After (3.0.0):**
+```php
+use Coroq\Form\FormItem\TelInput;
+
+$phone = new TelInput();
+$phone->setValue('+81-90-1234-5678');
+echo $phone->getValue();  // "+819012345678" (E.164 format, + preserved)
+
+$phone->setValue('090-1234-5678');
+echo $phone->getValue();  // "09012345678" (domestic format)
+```
+
+**Why this change?**
+- Preserving the `+` prefix allows distinguishing international (E.164) from domestic numbers
+- E.164 format: `+819012345678` (country code explicit)
+- Domestic format: `09012345678` (requires country context)
+
+**For validation/formatting:**
+Use libphonenumber (giggsey/libphonenumber-for-php):
+```php
+use libphonenumber\PhoneNumberUtil;
+use libphonenumber\PhoneNumberFormat;
+
+$phoneUtil = PhoneNumberUtil::getInstance();
+$number = $phoneUtil->parse($phone->getValue(), 'JP');  // Country hint for domestic
+$formatted = $phoneUtil->format($number, PhoneNumberFormat::NATIONAL);  // "090-1234-5678"
+```
+
 ---
 
 ## Step-by-Step Migration Example

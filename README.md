@@ -413,9 +413,41 @@ class ProfileForm extends Form {
 
 $form = new ProfileForm();
 $form->website->getUrl();        // Validated URL or null
+
+// TelInput preserves leading + for international format
+$form->phone->setValue('+81-90-1234-5678');
+echo $form->phone->getValue();   // "+819012345678" (E.164 format)
+
 $form->phone->setValue('090-1234-5678');
-echo $form->phone->getValue();   // "09012345678" (digits only)
+echo $form->phone->getValue();   // "09012345678" (domestic, digits only)
+
 echo $form->furigana->getKatakana(); // Katakana string or null
+```
+
+**TelInput** strips all formatting characters (spaces, hyphens, parentheses) but preserves a leading `+` for international E.164 format. It does NOT validate phone numbers - use libphonenumber for validation and formatting:
+
+```php
+use Coroq\Form\FormItem\TelInput;
+
+$phone = new TelInput();
+$phone->setValue('+81-90-1234-5678');
+echo $phone->getValue(); // "+819012345678"
+
+// For validation/formatting, use libphonenumber (giggsey/libphonenumber-for-php)
+use libphonenumber\PhoneNumberUtil;
+use libphonenumber\PhoneNumberFormat;
+
+$phoneUtil = PhoneNumberUtil::getInstance();
+
+// Parse with country hint for domestic numbers
+$number = $phoneUtil->parse($phone->getValue(), 'JP');
+
+// Or parse E.164 directly (no country hint needed)
+$number = $phoneUtil->parse('+819012345678');
+
+// Format for display
+$formatted = $phoneUtil->format($number, PhoneNumberFormat::NATIONAL);
+// "090-1234-5678"
 ```
 
 ## Nested Forms

@@ -45,7 +45,7 @@ class TelInputTest extends TestCase {
 
   public function testFilterWithPlusSign() {
     $input = (new TelInput())->setValue('+81-90-1234-5678');
-    $this->assertSame('819012345678', $input->getValue());
+    $this->assertSame('+819012345678', $input->getValue());
   }
 
   public function testFilterWithMixedFullAndHalfWidth() {
