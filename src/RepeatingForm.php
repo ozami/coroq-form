@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace Coroq\Form;
 
 use Closure;
+use Coroq\Form\FormItem\AbstractFormItem;
 use Coroq\Form\FormItem\FormItemInterface;
 
 /**
@@ -19,16 +20,12 @@ use Coroq\Form\FormItem\FormItemInterface;
  *     ->setMaxItemCount(5);
  *   $emails->setValue(['user@example.com', 'admin@example.com']);
  */
-class RepeatingForm implements FormInterface {
+class RepeatingForm extends AbstractFormItem implements FormInterface {
   /** @var array<int, FormItemInterface> Array of form items */
   private array $items = [];
 
   /** @var Closure|null Factory function to create new items */
   private ?Closure $factory = null;
-
-  private bool $__disabled = false;
-  private bool $__required = true;
-  private bool $__readonly = false;
 
   private int $minItemCount = 0;
   private int $maxItemCount = PHP_INT_MAX;
@@ -89,7 +86,7 @@ class RepeatingForm implements FormInterface {
   }
 
   public function setValue(mixed $value): self {
-    if ($this->__readonly) {
+    if ($this->isReadOnly()) {
       return $this;
     }
 
@@ -170,33 +167,6 @@ class RepeatingForm implements FormInterface {
     return $values;
   }
 
-  public function isDisabled(): bool {
-    return $this->__disabled;
-  }
-
-  public function setDisabled(bool $disabled): self {
-    $this->__disabled = boolval($disabled);
-    return $this;
-  }
-
-  public function isRequired(): bool {
-    return $this->__required;
-  }
-
-  public function setRequired(bool $required): self {
-    $this->__required = $required;
-    return $this;
-  }
-
-  public function isReadOnly(): bool {
-    return $this->__readonly;
-  }
-
-  public function setReadOnly(bool $readOnly): self {
-    $this->__readonly = $readOnly;
-    return $this;
-  }
-
   public function validate(): bool {
     // Skip validation if optional and empty
     if (!$this->isRequired() && $this->isEmpty()) {
@@ -211,6 +181,11 @@ class RepeatingForm implements FormInterface {
     return !$this->hasError();
   }
 
+  /**
+   * Get all errors from child items
+   *
+   * @return array<int, mixed>
+   */
   public function getError(): array {
     $errors = [];
     foreach ($this->getEnabledItems() as $index => $item) {
@@ -219,6 +194,9 @@ class RepeatingForm implements FormInterface {
     return $errors;
   }
 
+  /**
+   * Check if any child item has errors
+   */
   public function hasError(): bool {
     foreach ($this->getEnabledItems() as $item) {
       if ($item->hasError()) {

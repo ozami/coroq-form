@@ -42,6 +42,12 @@ interface FormItemInterface {
   /** Set read-only state (read-only items ignore setValue calls) */
   public function setReadOnly(bool $readOnly): self;
 
+  /** Get the human-readable label */
+  public function getLabel(): string;
+
+  /** Set the human-readable label */
+  public function setLabel(string $label): self;
+
   /** Validate the value and return true if valid */
   public function validate(): bool;
 

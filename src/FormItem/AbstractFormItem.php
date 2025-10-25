@@ -5,14 +5,14 @@ namespace Coroq\Form\FormItem;
 use Coroq\Form\Error\Error;
 
 /**
- * Abstract base class for input-like form items
+ * Abstract base class for form items
  *
- * Provides common functionality for label, error, and state management
- * (disabled, required, readonly) shared by Input, Derived, and other input types.
+ * Provides optional default implementation of FormItemInterface for label, error,
+ * and state management (disabled, required, readonly).
  *
  * Note: Form class implements FormItemInterface directly and does NOT extend this class.
  */
-abstract class AbstractInput implements FormItemInterface {
+abstract class AbstractFormItem implements FormItemInterface {
   /** @var bool */
   private bool $disabled = false;
   /** @var bool */
@@ -69,7 +69,7 @@ abstract class AbstractInput implements FormItemInterface {
   }
 
   /** Get the validation error (null if no error) */
-  public function getError(): ?Error {
+  public function getError(): mixed {
     return $this->error;
   }
 

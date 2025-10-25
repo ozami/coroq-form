@@ -52,7 +52,7 @@ use Coroq\Form\Error\SourceItemInvalidError;
 /**
  * Computed field derived from other form inputs
  */
-class Derived extends AbstractInput {
+class Derived extends AbstractFormItem {
   /** @var array<FormItemInterface> */
   private array $sources = [];
   /** @var Closure|null */

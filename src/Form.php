@@ -22,6 +22,7 @@ class Form implements FormInterface {
   private bool $__disabled = false;
   private bool $__required = true;
   private bool $__readonly = false;
+  private string $__label = "";
 
   /**
    * Get all values from enabled items as an associative array
@@ -152,6 +153,15 @@ class Form implements FormInterface {
 
   public function setReadOnly(bool $readOnly): self {
     $this->__readonly = $readOnly;
+    return $this;
+  }
+
+  public function getLabel(): string {
+    return $this->__label;
+  }
+
+  public function setLabel(string $label): self {
+    $this->__label = $label;
     return $this;
   }
 

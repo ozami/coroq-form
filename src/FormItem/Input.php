@@ -10,7 +10,7 @@ use Coroq\Form\Error\EmptyError;
  * Provides core functionality for value storage, filtering, and validation.
  * Subclasses override filter() and doValidate() to implement specific input types.
  */
-class Input extends AbstractInput {
+class Input extends AbstractFormItem {
   /** @var mixed The current value */
   private $value = "";
 

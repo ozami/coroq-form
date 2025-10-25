@@ -1,10 +1,10 @@
 <?php
-use Coroq\Form\FormItem\AbstractInput;
+use Coroq\Form\FormItem\AbstractFormItem;
 use Coroq\Form\Error\EmptyError;
 use PHPUnit\Framework\TestCase;
 
-// Create a minimal concrete test class that extends AbstractInput
-class AbstractInputTestClass extends AbstractInput {
+// Create a minimal concrete test class that extends AbstractFormItem
+class AbstractFormItemTestClass extends AbstractFormItem {
   private $value = '';
 
   public function getValue(): mixed {
@@ -30,15 +30,15 @@ class AbstractInputTestClass extends AbstractInput {
   }
 }
 
-class AbstractInputTest extends TestCase {
+class AbstractFormItemTest extends TestCase {
   // Label tests
   public function testDefaultLabelIsEmptyString() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $this->assertSame('', $input->getLabel());
   }
 
   public function testSetLabel() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $result = $input->setLabel('Username');
 
     $this->assertSame($input, $result); // Fluent interface
@@ -46,7 +46,7 @@ class AbstractInputTest extends TestCase {
   }
 
   public function testSetLabelEmptyString() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $input->setLabel('Test');
     $input->setLabel('');
 
@@ -54,7 +54,7 @@ class AbstractInputTest extends TestCase {
   }
 
   public function testSetLabelWithSpecialCharacters() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $input->setLabel('メールアドレス'); // Japanese
 
     $this->assertSame('メールアドレス', $input->getLabel());
@@ -62,12 +62,12 @@ class AbstractInputTest extends TestCase {
 
   // Error tests
   public function testDefaultErrorIsNull() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $this->assertNull($input->getError());
   }
 
   public function testSetError() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $error = new EmptyError($input);
     $result = $input->setError($error);
 
@@ -76,7 +76,7 @@ class AbstractInputTest extends TestCase {
   }
 
   public function testSetErrorToNull() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $input->setError(new EmptyError($input));
     $input->setError(null);
 
@@ -84,19 +84,19 @@ class AbstractInputTest extends TestCase {
   }
 
   public function testHasErrorReturnsFalseByDefault() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $this->assertFalse($input->hasError());
   }
 
   public function testHasErrorReturnsTrueWhenErrorSet() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $input->setError(new EmptyError($input));
 
     $this->assertTrue($input->hasError());
   }
 
   public function testHasErrorReturnsFalseAfterClearingError() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $input->setError(new EmptyError($input));
     $input->setError(null);
 
@@ -105,12 +105,12 @@ class AbstractInputTest extends TestCase {
 
   // Disabled tests
   public function testDefaultDisabledIsFalse() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $this->assertFalse($input->isDisabled());
   }
 
   public function testSetDisabledTrue() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $result = $input->setDisabled(true);
 
     $this->assertSame($input, $result); // Fluent interface
@@ -119,12 +119,12 @@ class AbstractInputTest extends TestCase {
 
   // Required tests
   public function testDefaultRequiredIsTrue() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $this->assertTrue($input->isRequired());
   }
 
   public function testSetRequiredFalse() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $result = $input->setRequired(false);
 
     $this->assertSame($input, $result); // Fluent interface
@@ -133,12 +133,12 @@ class AbstractInputTest extends TestCase {
 
   // ReadOnly tests
   public function testDefaultReadOnlyIsFalse() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $this->assertFalse($input->isReadOnly());
   }
 
   public function testSetReadOnlyTrue() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $result = $input->setReadOnly(true);
 
     $this->assertSame($input, $result); // Fluent interface
@@ -147,7 +147,7 @@ class AbstractInputTest extends TestCase {
 
   // Fluent interface tests
   public function testFluentInterfaceForStateSetters() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $result = $input
       ->setDisabled(true)
       ->setRequired(false)
@@ -160,7 +160,7 @@ class AbstractInputTest extends TestCase {
   }
 
   public function testFluentInterfaceForLabelAndError() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $error = new EmptyError($input);
     $result = $input
       ->setLabel('Test')
@@ -173,7 +173,7 @@ class AbstractInputTest extends TestCase {
 
   // getParsedValue default implementation test
   public function testGetParsedValueDefaultImplementation() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $input->setValue('test value');
 
     // Default implementation should return getValue()
@@ -182,7 +182,7 @@ class AbstractInputTest extends TestCase {
   }
 
   public function testGetParsedValueReturnsNullWhenValueIsNull() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
     $input->setValue(null);
 
     $this->assertSame($input->getValue(), $input->getParsedValue());
@@ -191,7 +191,7 @@ class AbstractInputTest extends TestCase {
 
   // Combined state tests
   public function testAllStatesCanBeSetIndependently() {
-    $input = new AbstractInputTestClass();
+    $input = new AbstractFormItemTestClass();
 
     // Set all states
     $input->setDisabled(true);
