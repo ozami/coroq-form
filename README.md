@@ -168,6 +168,82 @@ echo $form->email->getValue();    // "User@example.com"
 echo $form->email->getEmail();    // "User@example.com" or null if invalid
 ```
 
+### URL Input
+
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\UrlInput;
+
+class ProfileForm extends Form {
+    public readonly UrlInput $website;
+
+    public function __construct() {
+        $this->website = new UrlInput();
+    }
+}
+
+$form = new ProfileForm();
+$form->website->setValue('https://example.com/path?query=value');
+$form->validate();  // true
+echo $form->website->getUrl();  // "https://example.com/path?query=value"
+
+// Invalid URL
+$form->website->setValue('not a url');
+$form->validate();  // false - InvalidUrlError
+```
+
+UrlInput validates URLs using PHP's `FILTER_VALIDATE_URL`. It converts full-width characters to half-width and trims whitespace. You can restrict allowed schemes (default: http, https).
+
+### Telephone Input
+
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TelInput;
+
+class ContactForm extends Form {
+    public readonly TelInput $phone;
+
+    public function __construct() {
+        $this->phone = new TelInput();
+    }
+}
+
+$form = new ContactForm();
+
+// International format (E.164)
+$form->phone->setValue('+81-90-1234-5678');
+echo $form->phone->getValue();   // "+819012345678" (E.164 format)
+
+// Domestic format
+$form->phone->setValue('090-1234-5678');
+echo $form->phone->getValue();   // "09012345678" (domestic, digits only)
+```
+
+**TelInput** strips all formatting characters (spaces, hyphens, parentheses) but preserves a leading `+` for international E.164 format. It does **NOT** validate phone numbers - use libphonenumber for validation and formatting:
+
+```php
+use Coroq\Form\FormItem\TelInput;
+use libphonenumber\PhoneNumberUtil;
+use libphonenumber\PhoneNumberFormat;
+
+$phone = new TelInput();
+$phone->setValue('+81-90-1234-5678');
+echo $phone->getValue(); // "+819012345678"
+
+// For validation/formatting, use libphonenumber (giggsey/libphonenumber-for-php)
+$phoneUtil = PhoneNumberUtil::getInstance();
+
+// Parse with country hint for domestic numbers
+$number = $phoneUtil->parse($phone->getValue(), 'JP');
+
+// Or parse E.164 directly (no country hint needed)
+$number = $phoneUtil->parse('+819012345678');
+
+// Format for display
+$formatted = $phoneUtil->format($number, PhoneNumberFormat::NATIONAL);
+// "090-1234-5678"
+```
+
 ### Select Input
 
 ```php
@@ -386,60 +462,6 @@ if ($form->validate()) {
 }
 
 // Resubmission after error: newAvatar is empty, avatarId still has value
-```
-
-### Other Input Types
-
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\UrlInput;
-use Coroq\Form\FormItem\TelInput;
-
-class ProfileForm extends Form {
-    public readonly UrlInput $website;
-    public readonly TelInput $phone;
-
-    public function __construct() {
-        $this->website = new UrlInput();
-        $this->phone = new TelInput();
-    }
-}
-
-$form = new ProfileForm();
-$form->website->getUrl();        // Validated URL or null
-
-// TelInput preserves leading + for international format
-$form->phone->setValue('+81-90-1234-5678');
-echo $form->phone->getValue();   // "+819012345678" (E.164 format)
-
-$form->phone->setValue('090-1234-5678');
-echo $form->phone->getValue();   // "09012345678" (domestic, digits only)
-```
-
-**TelInput** strips all formatting characters (spaces, hyphens, parentheses) but preserves a leading `+` for international E.164 format. It does NOT validate phone numbers - use libphonenumber for validation and formatting:
-
-```php
-use Coroq\Form\FormItem\TelInput;
-
-$phone = new TelInput();
-$phone->setValue('+81-90-1234-5678');
-echo $phone->getValue(); // "+819012345678"
-
-// For validation/formatting, use libphonenumber (giggsey/libphonenumber-for-php)
-use libphonenumber\PhoneNumberUtil;
-use libphonenumber\PhoneNumberFormat;
-
-$phoneUtil = PhoneNumberUtil::getInstance();
-
-// Parse with country hint for domestic numbers
-$number = $phoneUtil->parse($phone->getValue(), 'JP');
-
-// Or parse E.164 directly (no country hint needed)
-$number = $phoneUtil->parse('+819012345678');
-
-// Format for display
-$formatted = $phoneUtil->format($number, PhoneNumberFormat::NATIONAL);
-// "090-1234-5678"
 ```
 
 ## Nested Forms
