@@ -27,11 +27,28 @@ class ErrorMessageFormatter {
   /**
    * Set the message map
    *
+   * Later definitions override earlier ones. This allows base error messages
+   * to be defined first, with specific overrides added after.
+   *
    * @param array<string, string|Closure> $messages Array of error class => message/closure
    * @return void
    */
   public function setMessages(array $messages): void {
-    $this->messages = $messages;
+    $this->messages = array_reverse($messages, true);
+  }
+
+  /**
+   * Set a single message
+   *
+   * Overwrites any existing message for the same error class.
+   *
+   * @param string $errorClass The error class name
+   * @param string|Closure $message The message string or closure
+   * @return void
+   */
+  public function setMessage(string $errorClass, string|Closure $message): void {
+    // Prepend to the beginning so it has highest priority (overrides existing)
+    $this->messages = [$errorClass => $message] + $this->messages;
   }
 
   /**
@@ -42,16 +59,17 @@ class ErrorMessageFormatter {
    * @throws LogicException If no message defined for the error class
    */
   public function format(Error $error): string {
-    $message = $this->messages[get_class($error)] ?? null;
-    if ($message === null) {
-      throw new LogicException("No message defined for error class: " . get_class($error));
-    }
-    if ($message instanceof Closure) {
-      $message = $message($error);
-      if (!is_string($message)) {
-        throw new LogicException("Closure must return a string for error class: " . get_class($error));
+    foreach ($this->messages as $type => $message) {
+      if ($error instanceof $type) {
+        if ($message instanceof Closure) {
+          $message = $message($error);
+          if (!is_string($message)) {
+            throw new LogicException("Closure must return a string for error class: " . get_class($error));
+          }
+        }
+        return strval($message);
       }
     }
-    return strval($message);
+    throw new LogicException("No message defined for error class: " . get_class($error));
   }
 }

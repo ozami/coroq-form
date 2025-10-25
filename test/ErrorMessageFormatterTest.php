@@ -179,4 +179,48 @@ class ErrorMessageFormatterTest extends TestCase {
 
     $this->assertSame('', $formatter->format($error));
   }
+
+  public function testSetMessageOverwritesExistingMessage() {
+    $formatter = new ErrorMessageFormatter();
+    $input = new Input();
+    $error = new EmptyError($input);
+
+    $formatter->setMessages([
+      EmptyError::class => 'First message'
+    ]);
+
+    $this->assertSame('First message', $formatter->format($error));
+
+    // Overwrite with setMessage
+    $formatter->setMessage(EmptyError::class, 'Second message');
+
+    $this->assertSame('Second message', $formatter->format($error));
+  }
+
+  public function testSetMessageWithClosure() {
+    $formatter = new ErrorMessageFormatter();
+    $input = (new TextInput())->setMaxLength(10);
+    $error = new TooLongError($input);
+
+    $formatter->setMessage(TooLongError::class, function(TooLongError $e) {
+      return 'Max ' . $e->formItem->getMaxLength();
+    });
+
+    $this->assertSame('Max 10', $formatter->format($error));
+  }
+
+  public function testSetMessageCanBeCalledMultipleTimes() {
+    $formatter = new ErrorMessageFormatter();
+
+    $formatter->setMessage(EmptyError::class, 'Required');
+    $formatter->setMessage(TooLongError::class, 'Too long');
+
+    $input = new Input();
+    $emptyError = new EmptyError($input);
+    $this->assertSame('Required', $formatter->format($emptyError));
+
+    $textInput = (new TextInput())->setMaxLength(10);
+    $tooLongError = new TooLongError($textInput);
+    $this->assertSame('Too long', $formatter->format($tooLongError));
+  }
 }
