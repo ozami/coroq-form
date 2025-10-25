@@ -1016,7 +1016,11 @@ if ($form->email->hasError()) {
 }
 ```
 
-**Error Hierarchy:** Many specific errors extend base error types. For example, `InvalidEmailError`, `InvalidUrlError`, `InvalidDateError`, `InvalidMimeTypeError`, and `InvalidExtensionError` all extend `InvalidError`. You can define a message for `InvalidError` as a catch-all, and optionally override specific subtypes:
+### Error Hierarchy and Inheritance
+
+The formatter uses `instanceof` matching, supporting error class inheritance. Many specific errors extend base error types. For example, `InvalidEmailError`, `InvalidUrlError`, `InvalidDateError`, `InvalidMimeTypeError`, and `InvalidExtensionError` all extend `InvalidError`.
+
+**Define base messages as defaults, then override specific types as needed:**
 
 ```php
 use Coroq\Form\ErrorMessageFormatter;
@@ -1024,12 +1028,56 @@ use Coroq\Form\Error\InvalidError;
 use Coroq\Form\Error\InvalidEmailError;
 
 $messages = [
-    InvalidError::class => 'Invalid value',  // Default for all Invalid* errors
-    InvalidEmailError::class => 'Please enter a valid email address',  // Override for email
+    InvalidError::class => 'Invalid value',  // Base message for all Invalid* errors
+    InvalidEmailError::class => 'Please enter a valid email address',  // Specific override
 ];
 
-// InvalidEmailError gets specific message
-// InvalidUrlError, InvalidDateError, etc. fall back to InvalidError message
+$formatter = new ErrorMessageFormatter();
+$formatter->setMessages($messages);
+
+// InvalidEmailError → 'Please enter a valid email address' (specific)
+// InvalidUrlError → 'Invalid value' (falls back to base)
+// InvalidDateError → 'Invalid value' (falls back to base)
+```
+
+**Later definitions override earlier ones.** This makes it easy to merge preset messages with custom overrides:
+
+```php
+// Start with preset base messages
+$messages = [
+    EmptyError::class => 'This field is required',
+    InvalidError::class => 'Invalid value',
+    TooLongError::class => 'Text is too long',
+    TooSmallError::class => 'Value is too small',
+];
+
+// Add specific overrides
+$messages = [
+    ...$messages,  // Base messages
+    InvalidEmailError::class => 'Please enter a valid email address',
+    TooLongError::class => fn($e) => "Maximum {$e->formItem->getMaxLength()} characters",
+];
+
+$formatter = new ErrorMessageFormatter();
+$formatter->setMessages($messages);
+```
+
+### Adding Individual Messages
+
+Use `setMessage()` to add or override individual messages without replacing the entire set:
+
+```php
+$formatter = new ErrorMessageFormatter();
+
+// Set base messages
+$formatter->setMessages([
+    EmptyError::class => 'Required field',
+    InvalidError::class => 'Invalid value',
+]);
+
+// Add or override specific messages
+$formatter->setMessage(InvalidEmailError::class, 'Please enter a valid email');
+$formatter->setMessage(TooLongError::class, fn($e) => "Max {$e->formItem->getMaxLength()} chars");
 ```
 
 ### Dynamic Messages with Closures

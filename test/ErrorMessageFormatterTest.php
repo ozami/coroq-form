@@ -3,8 +3,13 @@ use Coroq\Form\ErrorMessageFormatter;
 use Coroq\Form\Error\EmptyError;
 use Coroq\Form\Error\TooLongError;
 use Coroq\Form\Error\SourceItemInvalidError;
+use Coroq\Form\Error\InvalidError;
+use Coroq\Form\Error\InvalidEmailError;
+use Coroq\Form\Error\InvalidUrlError;
 use Coroq\Form\FormItem\Input;
 use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\UrlInput;
 use Coroq\Form\FormItem\Derived;
 use PHPUnit\Framework\TestCase;
 
@@ -222,5 +227,82 @@ class ErrorMessageFormatterTest extends TestCase {
     $textInput = (new TextInput())->setMaxLength(10);
     $tooLongError = new TooLongError($textInput);
     $this->assertSame('Too long', $formatter->format($tooLongError));
+  }
+
+  public function testFormatMatchesErrorHierarchy() {
+    $formatter = new ErrorMessageFormatter();
+
+    // Define only base error message
+    $formatter->setMessages([
+      InvalidError::class => 'Invalid value'
+    ]);
+
+    // InvalidEmailError extends InvalidError, so it should match
+    $emailInput = new EmailInput();
+    $emailError = new InvalidEmailError($emailInput);
+    $this->assertSame('Invalid value', $formatter->format($emailError));
+
+    // InvalidUrlError also extends InvalidError
+    $urlInput = new UrlInput();
+    $urlError = new InvalidUrlError($urlInput);
+    $this->assertSame('Invalid value', $formatter->format($urlError));
+  }
+
+  public function testFormatLaterDefinitionOverridesEarlier() {
+    $formatter = new ErrorMessageFormatter();
+
+    // Define base message first, then specific override
+    $formatter->setMessages([
+      InvalidError::class => 'Generic invalid',
+      InvalidEmailError::class => 'Invalid email',
+    ]);
+
+    // InvalidEmailError should use specific message
+    $emailInput = new EmailInput();
+    $emailError = new InvalidEmailError($emailInput);
+    $this->assertSame('Invalid email', $formatter->format($emailError));
+
+    // InvalidUrlError should fall back to base message
+    $urlInput = new UrlInput();
+    $urlError = new InvalidUrlError($urlInput);
+    $this->assertSame('Generic invalid', $formatter->format($urlError));
+  }
+
+  public function testSetMessageOverridesBase() {
+    $formatter = new ErrorMessageFormatter();
+
+    // Set base messages
+    $formatter->setMessages([
+      InvalidError::class => 'Invalid value',
+      EmptyError::class => 'Required',
+    ]);
+
+    // Override specific subtype with setMessage
+    $formatter->setMessage(InvalidEmailError::class, 'Please enter a valid email');
+
+    $emailInput = new EmailInput();
+    $emailError = new InvalidEmailError($emailInput);
+    $this->assertSame('Please enter a valid email', $formatter->format($emailError));
+
+    // Base message still works for other subtypes
+    $urlInput = new UrlInput();
+    $urlError = new InvalidUrlError($urlInput);
+    $this->assertSame('Invalid value', $formatter->format($urlError));
+  }
+
+  public function testFormatMessageOrderWithMultipleInheritanceLevels() {
+    $formatter = new ErrorMessageFormatter();
+
+    // Most specific should win
+    $formatter->setMessages([
+      InvalidError::class => 'Base invalid',
+      InvalidEmailError::class => 'Specific email error',
+    ]);
+
+    $emailInput = new EmailInput();
+    $emailError = new InvalidEmailError($emailInput);
+
+    // Should match the most specific (InvalidEmailError), not the base
+    $this->assertSame('Specific email error', $formatter->format($emailError));
   }
 }
