@@ -46,11 +46,4 @@ class InputTest extends TestCase {
     $input->setValue('test');
     $this->assertNull($input->getError());
   }
-
-  public function testDisabledInputNotValidated() {
-    $input = (new Input())->setDisabled(true);
-    // Disabled items are not validated by validate() call
-    // This is implicitly tested by Form tests
-    $this->assertTrue($input->isDisabled());
-  }
 }

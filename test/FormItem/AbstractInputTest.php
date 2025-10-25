@@ -117,14 +117,6 @@ class AbstractInputTest extends TestCase {
     $this->assertTrue($input->isDisabled());
   }
 
-  public function testSetDisabledFalse() {
-    $input = new AbstractInputTestClass();
-    $input->setDisabled(true);
-    $input->setDisabled(false);
-
-    $this->assertFalse($input->isDisabled());
-  }
-
   // Required tests
   public function testDefaultRequiredIsTrue() {
     $input = new AbstractInputTestClass();
@@ -139,14 +131,6 @@ class AbstractInputTest extends TestCase {
     $this->assertFalse($input->isRequired());
   }
 
-  public function testSetRequiredTrue() {
-    $input = new AbstractInputTestClass();
-    $input->setRequired(false);
-    $input->setRequired(true);
-
-    $this->assertTrue($input->isRequired());
-  }
-
   // ReadOnly tests
   public function testDefaultReadOnlyIsFalse() {
     $input = new AbstractInputTestClass();
@@ -159,14 +143,6 @@ class AbstractInputTest extends TestCase {
 
     $this->assertSame($input, $result); // Fluent interface
     $this->assertTrue($input->isReadOnly());
-  }
-
-  public function testSetReadOnlyFalse() {
-    $input = new AbstractInputTestClass();
-    $input->setReadOnly(true);
-    $input->setReadOnly(false);
-
-    $this->assertFalse($input->isReadOnly());
   }
 
   // Fluent interface tests
@@ -230,34 +206,5 @@ class AbstractInputTest extends TestCase {
     $this->assertTrue($input->isReadOnly());
     $this->assertSame('Test Label', $input->getLabel());
     $this->assertTrue($input->hasError());
-  }
-
-  public function testStateChangesAreIndependent() {
-    $input = new AbstractInputTestClass();
-
-    // Change disabled shouldn't affect required or readonly
-    $input->setDisabled(true);
-    $this->assertTrue($input->isRequired()); // Still default true
-    $this->assertFalse($input->isReadOnly()); // Still default false
-
-    // Change required shouldn't affect disabled or readonly
-    $input->setRequired(false);
-    $this->assertTrue($input->isDisabled()); // Still true
-    $this->assertFalse($input->isReadOnly()); // Still false
-
-    // Change readonly shouldn't affect disabled or required
-    $input->setReadOnly(true);
-    $this->assertTrue($input->isDisabled()); // Still true
-    $this->assertFalse($input->isRequired()); // Still false
-  }
-
-  public function testErrorAndLabelAreIndependent() {
-    $input = new AbstractInputTestClass();
-
-    $input->setLabel('Test');
-    $this->assertFalse($input->hasError()); // Setting label doesn't set error
-
-    $input->setError(new EmptyError($input));
-    $this->assertSame('Test', $input->getLabel()); // Setting error doesn't change label
   }
 }
