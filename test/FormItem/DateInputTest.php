@@ -91,11 +91,12 @@ class DateInputTest extends TestCase {
     $this->assertInstanceOf(DateTime::class, $dt);
   }
 
-  public function testGetDateTimeWithTimezone() {
-    // DateInput uses "@" format which creates timezone with +00:00 offset
-    $input = (new DateInput())->setValue('2024-01-15 12:00:00');
+  public function testGetDateTimeUsesServerTimezone() {
+    // DateInput returns DateTime in server's default timezone
+    $input = (new DateInput())->setValue('2024-01-15');
     $dt = $input->getDateTime();
-    $this->assertSame('+00:00', $dt->getTimezone()->getName());
+    // Should use server's default timezone, not UTC
+    $this->assertSame(date_default_timezone_get(), $dt->getTimezone()->getName());
   }
 
   public function testGetDateTimeImmutableReturnsNullForInvalidDate() {
@@ -233,5 +234,76 @@ class DateInputTest extends TestCase {
     $input->clear();
     $this->assertTrue($input->isEmpty());
     $this->assertNull($input->getDateTime());
+  }
+
+  // Timezone bug prevention tests
+
+  public function testGetDateTimeDoesNotShiftDateInTokyoTimezone() {
+    $originalTz = date_default_timezone_get();
+    date_default_timezone_set('Asia/Tokyo');
+
+    try {
+      $input = new DateInput();
+      $input->setValue('2023-12-31');
+
+      $this->assertSame('2023-12-31', $input->getValue());
+
+      $dt = $input->getDateTime();
+      $this->assertNotNull($dt);
+      // Date should NOT shift - user entered 2023-12-31, should get 2023-12-31
+      $this->assertSame('2023-12-31', $dt->format('Y-m-d'));
+    } finally {
+      date_default_timezone_set($originalTz);
+    }
+  }
+
+  public function testGetDateTimeDoesNotShiftDateInNewYorkTimezone() {
+    $originalTz = date_default_timezone_get();
+    date_default_timezone_set('America/New_York');
+
+    try {
+      $input = new DateInput();
+      $input->setValue('2023-01-01');
+
+      $this->assertSame('2023-01-01', $input->getValue());
+
+      $dt = $input->getDateTime();
+      $this->assertNotNull($dt);
+      // Date should NOT shift - user entered 2023-01-01, should get 2023-01-01
+      $this->assertSame('2023-01-01', $dt->format('Y-m-d'));
+    } finally {
+      date_default_timezone_set($originalTz);
+    }
+  }
+
+  public function testGetDateTimeDoesNotShiftDateInLosAngelesTimezone() {
+    $originalTz = date_default_timezone_get();
+    date_default_timezone_set('America/Los_Angeles');
+
+    try {
+      $input = new DateInput();
+      $input->setValue('2023-06-15');
+
+      $dt = $input->getDateTime();
+      $this->assertSame('2023-06-15', $dt->format('Y-m-d'));
+    } finally {
+      date_default_timezone_set($originalTz);
+    }
+  }
+
+  public function testGetDateTimeImmutableDoesNotShiftDate() {
+    $originalTz = date_default_timezone_get();
+    date_default_timezone_set('Asia/Tokyo');
+
+    try {
+      $input = new DateInput();
+      $input->setValue('2023-12-31');
+
+      $dt = $input->getDateTimeImmutable();
+      $this->assertNotNull($dt);
+      $this->assertSame('2023-12-31', $dt->format('Y-m-d'));
+    } finally {
+      date_default_timezone_set($originalTz);
+    }
   }
 }

@@ -46,6 +46,11 @@ class DateInput extends Input {
   }
 
   /**
+   * Get DateTime object for this date
+   *
+   * Returns DateTime in server's default timezone.
+   * The date will be interpreted as midnight (00:00:00) in the server's timezone.
+   *
    * @return \DateTime|null
    */
   public function getDateTime(): ?\DateTime {
@@ -56,7 +61,7 @@ class DateInput extends Input {
     if (!$this->isValidDate($value)) {
       return null;
     }
-    return new \DateTime("@" . strtotime($value));
+    return new \DateTime($value);
   }
 
   /**
