@@ -25,7 +25,7 @@ class TextInput extends Input implements HasLengthRangeInterface {
   /** @var bool */
   protected $multiline = false;
   /** @var bool */
-  protected $noSpace = false;
+  protected $noWhitespace = false;
   /** @var bool */
   protected $noControl = true;
   /** @var string|null */
@@ -63,11 +63,24 @@ class TextInput extends Input implements HasLengthRangeInterface {
   }
 
   /**
-   * @param bool $noSpace
+   * Remove all whitespace characters
+   *
+   * When enabled, removes ALL whitespace including:
+   * - Regular spaces
+   * - Tabs (\t)
+   * - Newlines (\n, \r)
+   * - Other whitespace (\v, \f)
+   * - No-break spaces (\xa0)
+   * - Full-width spaces (　)
+   *
+   * Note: This will remove newlines even when multiline=true.
+   * If you want to preserve newlines, don't enable this option.
+   *
+   * @param bool $noWhitespace
    * @return $this
    */
-  public function setNoSpace(bool $noSpace): self {
-    $this->noSpace = $noSpace;
+  public function setNoWhitespace(bool $noWhitespace): self {
+    $this->noWhitespace = $noWhitespace;
     return $this;
   }
 
@@ -131,7 +144,7 @@ class TextInput extends Input implements HasLengthRangeInterface {
       // 0x00-0x1f, 0x7f and 0x00a0 (no-break space, which is 0xc2a0 in UTF-8) except CR and LF
       $value = preg_replace("/[\\x00-\\x09\\x0B\\x0c\\x0e-\\x1f\\x7f\\xa0]/u", " ", $value);
     }
-    if ($this->noSpace) {
+    if ($this->noWhitespace) {
       $value = preg_replace("/[[:space:]\\00\\xa0　]/u", "", $value);
     }
     if ($this->trim == self::LEFT || $this->trim == self::BOTH) {

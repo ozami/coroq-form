@@ -1778,7 +1778,7 @@ $text->setTrim(string);                  // LEFT, RIGHT, BOTH, null
 $text->setCase(int);                     // UPPER, LOWER, TITLE
 $text->setMb(string);                    // mb_convert_kana option
 $text->setMultiline(bool);
-$text->setNoSpace(bool);
+$text->setNoWhitespace(bool);
 $text->setNoControl(bool);
 ```
 

@@ -162,7 +162,7 @@ class TextInputTest extends TestCase {
 
   public function testFilterWithNoSpace() {
     $input = (new TextInput())
-      ->setNoSpace(true)
+      ->setNoWhitespace(true)
       ->setTrim(null)
       ->setMultiline(true)
       ->setEol(null)
@@ -175,7 +175,7 @@ class TextInputTest extends TestCase {
 
   public function testFilterWithNoSpaceRemovesAllWhitespace() {
     $input = (new TextInput())
-      ->setNoSpace(true)
+      ->setNoWhitespace(true)
       ->setTrim(null)
       ->setMultiline(true)
       ->setEol(null)
@@ -203,7 +203,7 @@ class TextInputTest extends TestCase {
       ->setCase(TextInput::UPPER)
       ->setMultiline(false)
       ->setNoControl(true)
-      ->setNoSpace(false)
+      ->setNoWhitespace(false)
       ->setTrim(TextInput::BOTH)
       ->setValue("  あいう\ntest  ");
 
@@ -217,7 +217,7 @@ class TextInputTest extends TestCase {
     // 2. case conversion
     // 3. eol/newline handling
     // 4. noControl
-    // 5. noSpace
+    // 5. noWhitespace
     // 6. trim
 
     $input = (new TextInput())
@@ -303,7 +303,7 @@ class TextInputTest extends TestCase {
 
   public function testFilterNoSpaceWithFullWidthSpace() {
     $input = (new TextInput())
-      ->setNoSpace(true)
+      ->setNoWhitespace(true)
       ->setTrim(null)
       ->setMultiline(true)
       ->setEol(null)
@@ -321,7 +321,7 @@ class TextInputTest extends TestCase {
       ->setMb('KVC')
       ->setCase(TextInput::UPPER)
       ->setMultiline(true)
-      ->setNoSpace(true)
+      ->setNoWhitespace(true)
       ->setNoControl(false)
       ->setEol("\r\n")
       ->setTrim(TextInput::LEFT)

@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING:** Removed `Input::setDefaultErrorStringifier()`
 - **BREAKING:** Renamed `getFilled()` to `getFilledValue()` for clarity
 - **BREAKING:** Renamed `disable()`/`enable()` to `setDisabled(bool)` with fluent interface
+- **BREAKING:** Renamed `TextInput::setNoSpace()` to `setNoWhitespace()` for clarity
 - **BREAKING:** Computed inputs now use `setComputation()` closure instead of extending class
 - **BREAKING:** Removed form options (path separator)
 - Form items are now stored as public properties on Form objects
