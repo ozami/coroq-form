@@ -1,6 +1,28 @@
 # Coroq Form
 
-Type-safe PHP form validation and processing library with built-in filtering, validation, and error management.
+PHP form validation library. Type-safe, zero dependencies.
+
+## Scope
+
+### What This Library Does
+
+- **Value validation and filtering** - Validates and normalizes form input (email, URL, numbers, dates, text, etc.)
+- **Type-safe form handling** - Provides typed input classes with IDE autocomplete support
+- **Error management** - Tracks validation errors as typed objects (not string codes)
+- **Nested forms** - Supports hierarchical form structures (forms within forms)
+- **Dynamic lists** - Manages repeating form items (e.g., multiple email addresses)
+- **Cross-field validation** - Validates relationships between fields (e.g., password confirmation)
+
+### What This Library Does NOT Do
+
+- **HTML rendering** - This library does not generate HTML. You write your own templates.
+- **HTTP request handling** - Does not parse `$_POST` or `$_FILES`. You pass data to `setValue()`.
+- **CSRF protection** - Does not generate or validate CSRF tokens. Use your framework's CSRF protection.
+- **Database operations** - Does not save or load data from databases. Use your ORM/database layer.
+- **Framework integration** - Framework-agnostic. Integrate it yourself or use it standalone.
+- **Client-side validation** - Server-side only. Add your own JavaScript validation if needed.
+
+This is a **validation and data processing layer** that sits between your HTTP layer and business logic.
 
 ## Installation
 
