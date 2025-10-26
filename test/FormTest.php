@@ -465,4 +465,23 @@ class FormTest extends TestCase {
     $this->assertArrayHasKey('name', $errors);
     $this->assertNull($errors['name']); // No error set yet
   }
+
+  public function testDefaultLabelIsEmptyString() {
+    $form = new Form();
+    $this->assertSame('', $form->getLabel());
+  }
+
+  public function testSetLabel() {
+    $form = new Form();
+    $result = $form->setLabel('User Registration');
+
+    $this->assertSame($form, $result); // Fluent interface
+    $this->assertSame('User Registration', $form->getLabel());
+  }
+
+  public function testGetLabel() {
+    $form = new Form();
+    $form->setLabel('Contact Form');
+    $this->assertSame('Contact Form', $form->getLabel());
+  }
 }

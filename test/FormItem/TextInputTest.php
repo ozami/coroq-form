@@ -329,4 +329,22 @@ class TextInputTest extends TestCase {
 
     $this->assertSame($input, $result);
   }
+
+  public function testValidateTooLongError() {
+    $input = (new TextInput())
+      ->setMaxLength(5)
+      ->setValue('toolong');
+
+    $this->assertFalse($input->validate());
+    $this->assertInstanceOf(\Coroq\Form\Error\TooLongError::class, $input->getError());
+  }
+
+  public function testValidateTooShortError() {
+    $input = (new TextInput())
+      ->setMinLength(5)
+      ->setValue('abc');
+
+    $this->assertFalse($input->validate());
+    $this->assertInstanceOf(\Coroq\Form\Error\TooShortError::class, $input->getError());
+  }
 }
