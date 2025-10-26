@@ -129,10 +129,6 @@ class RepeatingForm extends AbstractFormItem implements FormInterface {
     return $item;
   }
 
-  public function count(): int {
-    return count($this->items);
-  }
-
   /**
    * Recreate all child items from factory
    *

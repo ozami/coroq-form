@@ -18,24 +18,24 @@ class RepeatingFormTest extends TestCase {
     $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
     $repeating->setValue(['a@example.com', 'b@example.com', 'c@example.com']);
 
-    $this->assertEquals(3, $repeating->count());
+    $this->assertEquals(3, count($repeating->getItems()));
     $this->assertEquals(['a@example.com', 'b@example.com', 'c@example.com'], $repeating->getValue());
   }
 
   public function testSetValueRebuildsAllItems() {
     $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
     $repeating->setValue(['a@example.com', 'b@example.com']);
-    $this->assertEquals(2, $repeating->count());
+    $this->assertEquals(2, count($repeating->getItems()));
 
     $repeating->setValue(['x@example.com', 'y@example.com', 'z@example.com']);
-    $this->assertEquals(3, $repeating->count());
+    $this->assertEquals(3, count($repeating->getItems()));
     $this->assertEquals(['x@example.com', 'y@example.com', 'z@example.com'], $repeating->getValue());
   }
 
   public function testSetValueNormalizesNonArrayToEmptyArray() {
     $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
     $repeating->setValue('not an array');
-    $this->assertEquals(0, $repeating->count());
+    $this->assertEquals(0, count($repeating->getItems()));
     $this->assertEquals([], $repeating->getValue());
   }
 
@@ -45,7 +45,7 @@ class RepeatingFormTest extends TestCase {
     $repeating->setValue([0 => 'first', 5 => 'second', 10 => 'third']);
 
     // Should be reindexed to 0, 1, 2
-    $this->assertEquals(3, $repeating->count());
+    $this->assertEquals(3, count($repeating->getItems()));
     $this->assertEquals(['first', 'second', 'third'], $repeating->getValue());
   }
 
@@ -54,7 +54,7 @@ class RepeatingFormTest extends TestCase {
     $repeating->setMinItemCount(3);
 
     $repeating->setValue(['a@example.com']);
-    $this->assertEquals(3, $repeating->count());
+    $this->assertEquals(3, count($repeating->getItems()));
     $this->assertEquals(['a@example.com', '', ''], $repeating->getValue());
   }
 
@@ -72,7 +72,7 @@ class RepeatingFormTest extends TestCase {
     $repeating->setMaxItemCount(2);
 
     $repeating->setValue(['a@example.com', 'b@example.com', 'c@example.com', 'd@example.com']);
-    $this->assertEquals(2, $repeating->count());
+    $this->assertEquals(2, count($repeating->getItems()));
     $this->assertEquals(['a@example.com', 'b@example.com'], $repeating->getValue());
   }
 
@@ -171,7 +171,7 @@ class RepeatingFormTest extends TestCase {
 
     $item = $repeating->addItem('b@example.com');
 
-    $this->assertEquals(2, $repeating->count());
+    $this->assertEquals(2, count($repeating->getItems()));
     $this->assertInstanceOf(EmailInput::class, $item);
     $this->assertEquals('b@example.com', $item->getValue());
   }
@@ -181,7 +181,7 @@ class RepeatingFormTest extends TestCase {
 
     $item = $repeating->addItem();
 
-    $this->assertEquals(1, $repeating->count());
+    $this->assertEquals(1, count($repeating->getItems()));
     $this->assertEquals('', $item->getValue());
   }
 
@@ -213,7 +213,7 @@ class RepeatingFormTest extends TestCase {
     $repeating->setValue(['b@example.com', 'c@example.com']);
 
     // Value should not change
-    $this->assertEquals(1, $repeating->count());
+    $this->assertEquals(1, count($repeating->getItems()));
     $this->assertEquals(['a@example.com'], $repeating->getValue());
   }
 
@@ -256,7 +256,7 @@ class RepeatingFormTest extends TestCase {
       ['c', 'd', 'e'],
     ]);
 
-    $this->assertEquals(2, $repeating->count());
+    $this->assertEquals(2, count($repeating->getItems()));
     $this->assertEquals(['a', 'b'], $repeating->getItem(0)->getValue());
     $this->assertEquals(['c', 'd', 'e'], $repeating->getItem(1)->getValue());
   }
@@ -301,14 +301,6 @@ class RepeatingFormTest extends TestCase {
     $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
     $repeating->setMaxItemCount(10);
     $this->assertEquals(10, $repeating->getMaxItemCount());
-  }
-
-  public function testCountReturnsNumberOfItems() {
-    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
-    $this->assertEquals(0, $repeating->count());
-
-    $repeating->setValue(['a@example.com', 'b@example.com']);
-    $this->assertEquals(2, $repeating->count());
   }
 
   public function testGetItemAcceptsMixedType() {
@@ -383,17 +375,17 @@ class RepeatingFormTest extends TestCase {
 
     // setValue with null should treat as empty array
     $repeating->setValue(null);
-    $this->assertEquals(2, $repeating->count()); // minItemCount
+    $this->assertEquals(2, count($repeating->getItems())); // minItemCount
     $this->assertEquals(['', ''], $repeating->getValue());
 
     // setValue with string should treat as empty array
     $repeating->setValue('not-an-array');
-    $this->assertEquals(2, $repeating->count());
+    $this->assertEquals(2, count($repeating->getItems()));
     $this->assertEquals(['', ''], $repeating->getValue());
 
     // setValue with int should treat as empty array
     $repeating->setValue(123);
-    $this->assertEquals(2, $repeating->count());
+    $this->assertEquals(2, count($repeating->getItems()));
     $this->assertEquals(['', ''], $repeating->getValue());
   }
 
