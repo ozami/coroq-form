@@ -165,26 +165,6 @@ class RepeatingFormTest extends TestCase {
     $this->assertInstanceOf(EmailInput::class, $items[1]);
   }
 
-  public function testAddItemCreatesNewItemFromFactory() {
-    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
-    $repeating->setValue(['a@example.com']);
-
-    $item = $repeating->addItem('b@example.com');
-
-    $this->assertEquals(2, count($repeating->getItems()));
-    $this->assertInstanceOf(EmailInput::class, $item);
-    $this->assertEquals('b@example.com', $item->getValue());
-  }
-
-  public function testAddItemWithoutValueCreatesEmptyItem() {
-    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
-
-    $item = $repeating->addItem();
-
-    $this->assertEquals(1, count($repeating->getItems()));
-    $this->assertEquals('', $item->getValue());
-  }
-
   public function testGetFilledValueWithNestedForms() {
     $repeating = (new RepeatingForm())->setFactory(function(int $i) {
       $form = new Form();
@@ -395,14 +375,6 @@ class RepeatingFormTest extends TestCase {
 
     $repeating = new RepeatingForm();
     $repeating->setValue(['value']);
-  }
-
-  public function testAddItemWithoutFactoryThrowsException() {
-    $this->expectException(\LogicException::class);
-    $this->expectExceptionMessage('Factory not set');
-
-    $repeating = new RepeatingForm();
-    $repeating->addItem('value');
   }
 
   public function testIsDisabled() {

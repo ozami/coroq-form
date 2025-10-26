@@ -47,6 +47,15 @@ class RepeatingForm extends AbstractFormItem implements FormInterface {
     return $this;
   }
 
+  /**
+   * Set values for all items
+   *
+   * Recreates all items from factory and sets their values.
+   * Final item count will be: max(count($value), minItemCount) capped at maxItemCount.
+   *
+   * @param mixed $value Array of values (will be reindexed to sequential keys)
+   * @return self
+   */
   public function setValue(mixed $value): self {
     if ($this->isReadOnly()) {
       return $this;
@@ -114,19 +123,6 @@ class RepeatingForm extends AbstractFormItem implements FormInterface {
    */
   public function getItems(): array {
     return $this->items;
-  }
-
-  public function addItem(?string $value = null): FormItemInterface {
-    if (!$this->factory) {
-      throw new \LogicException("Factory not set");
-    }
-    $index = count($this->items);
-    $item = ($this->factory)($index);
-    if ($value !== null) {
-      $item->setValue($value);
-    }
-    $this->items[] = $item;
-    return $item;
   }
 
   /**
