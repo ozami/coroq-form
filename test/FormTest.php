@@ -6,35 +6,6 @@ use Coroq\Form\FormItem\BooleanInput;
 use PHPUnit\Framework\TestCase;
 
 class FormTest extends TestCase {
-  public function testGetValueCollectsValuesFromEnabledItems() {
-    $form = new Form();
-    $form->a = (new Input())->setValue('value_a');
-    $form->b = (new Input())->setValue('value_b');
-    $form->c = (new Input())->setValue('value_c')->setDisabled(true);
-
-    $this->assertEquals(['a' => 'value_a', 'b' => 'value_b'], $form->getValue());
-  }
-
-  public function testGetParsedValue() {
-    $form = new Form();
-    $form->age = (new IntegerInput())->setValue('25');
-    $form->newsletter = (new BooleanInput())->setValue('on');
-
-    $parsed = $form->getParsedValue();
-    $this->assertSame(25, $parsed['age']);
-    $this->assertSame(true, $parsed['newsletter']);
-  }
-
-  public function testGetFilledValue() {
-    $form = new Form();
-    $form->name = (new Input())->setValue('John');
-    $form->email = (new Input())->setValue('');
-    $form->phone = (new Input())->setValue('');
-
-    $filled = $form->getFilledValue();
-    $this->assertEquals(['name' => 'John'], $filled);
-  }
-
   public function testGetFilledValueWithNestedForm() {
     $form = new Form();
     $form->name = (new Input())->setValue('John');
@@ -89,17 +60,6 @@ class FormTest extends TestCase {
     ], $filled);
   }
 
-  public function testGetFilledValueWithDisabledItems() {
-    $form = new Form();
-    $form->name = (new Input())->setValue('John');
-    $form->email = (new Input())->setValue('john@example.com')->setDisabled(true);
-    $form->phone = (new Input())->setValue('');
-
-    // Disabled items should be excluded
-    $filled = $form->getFilledValue();
-    $this->assertEquals(['name' => 'John'], $filled);
-  }
-
   public function testGetFilledValueWithDisabledNestedForm() {
     $form = new Form();
     $form->name = (new Input())->setValue('John');
@@ -130,16 +90,16 @@ class FormTest extends TestCase {
     ], $filled);
   }
 
-  public function testGetFilledParsedValue() {
+  public function testNestedFormGetFilledParsedValue() {
     $form = new Form();
-    $form->age = (new IntegerInput())->setValue('30');
-    $form->newsletter = (new BooleanInput())->setValue('');
-    $form->notes = (new Input())->setValue('');
+    $form->age = (new IntegerInput())->setValue('25');
+    $form->address = new Form();
+    $form->address->street = (new Input())->setValue('Main St');
+    $form->address->city = (new Input())->setValue('');
 
     $filled = $form->getFilledParsedValue();
-    $this->assertSame(30, $filled['age']);
-    $this->assertArrayNotHasKey('newsletter', $filled);
-    $this->assertArrayNotHasKey('notes', $filled);
+    $this->assertSame(25, $filled['age']);
+    $this->assertEquals(['street' => 'Main St'], $filled['address']);
   }
 
   public function testSetValue() {
@@ -177,39 +137,6 @@ class FormTest extends TestCase {
     $this->assertSame('Original', $form->name->getValue());
   }
 
-  public function testValidateRequired() {
-    $form = new Form();
-    $form->name = new Input();
-
-    $this->assertFalse($form->validate());
-    $this->assertTrue($form->hasError());
-
-    $form->name->setValue('John');
-    $this->assertTrue($form->validate());
-    $this->assertFalse($form->hasError());
-  }
-
-  public function testValidateOptional() {
-    $form = new Form();
-    $form->name = new Input();
-    $form->setRequired(false);
-
-    // Empty optional form passes validation
-    $this->assertTrue($form->validate());
-  }
-
-  public function testNestedFormGetFilledParsedValue() {
-    $form = new Form();
-    $form->age = (new IntegerInput())->setValue('25');
-    $form->address = new Form();
-    $form->address->street = (new Input())->setValue('Main St');
-    $form->address->city = (new Input())->setValue('');
-
-    $filled = $form->getFilledParsedValue();
-    $this->assertSame(25, $filled['age']);
-    $this->assertEquals(['street' => 'Main St'], $filled['address']);
-  }
-
   public function testGetItem() {
     $form = new Form();
     $form->name = new Input();
@@ -233,19 +160,6 @@ class FormTest extends TestCase {
   }
 
   // Form::clear() tests
-
-  public function testClearClearsAllItems() {
-    $form = new Form();
-    $form->name = (new Input())->setValue('John');
-    $form->email = (new Input())->setValue('john@example.com');
-    $form->age = (new IntegerInput())->setValue('30');
-
-    $form->clear();
-
-    $this->assertSame('', $form->name->getValue());
-    $this->assertSame('', $form->email->getValue());
-    $this->assertSame('', $form->age->getValue());
-  }
 
   public function testClearClearsDisabledItems() {
     $form = new Form();
@@ -271,15 +185,6 @@ class FormTest extends TestCase {
     $this->assertSame('', $form->name->getValue());
     $this->assertSame('', $form->address->street->getValue());
     $this->assertSame('', $form->address->city->getValue());
-  }
-
-  public function testClearReturnsFluentInterface() {
-    $form = new Form();
-    $form->name = (new Input())->setValue('John');
-
-    $result = $form->clear();
-
-    $this->assertSame($form, $result);
   }
 
   public function testClearRemovesErrors() {
@@ -348,46 +253,6 @@ class FormTest extends TestCase {
 
   // Form::getError() tests
 
-  public function testGetErrorReturnsEmptyArrayWhenNoErrors() {
-    $form = new Form();
-    $form->name = (new Input())->setValue('John');
-    $form->email = (new Input())->setValue('john@example.com');
-
-    $form->validate();
-
-    $errors = $form->getError();
-    $this->assertIsArray($errors);
-    $this->assertArrayHasKey('name', $errors);
-    $this->assertArrayHasKey('email', $errors);
-    $this->assertNull($errors['name']);
-    $this->assertNull($errors['email']);
-  }
-
-  public function testGetErrorReturnsErrorsFromItems() {
-    $form = new Form();
-    $form->name = new Input(); // Required, empty
-    $form->email = (new Input())->setValue('john@example.com');
-
-    $form->validate();
-
-    $errors = $form->getError();
-    $this->assertNotNull($errors['name']);
-    $this->assertInstanceOf(\Coroq\Form\Error\Error::class, $errors['name']);
-    $this->assertNull($errors['email']);
-  }
-
-  public function testGetErrorExcludesDisabledItems() {
-    $form = new Form();
-    $form->name = new Input(); // Required, empty
-    $form->email = (new Input())->setDisabled(true); // Required, empty, but disabled
-
-    $form->validate();
-
-    $errors = $form->getError();
-    $this->assertArrayHasKey('name', $errors);
-    $this->assertArrayNotHasKey('email', $errors); // Disabled items excluded
-  }
-
   public function testGetErrorIncludesNestedFormErrors() {
     $form = new Form();
     $form->name = (new Input())->setValue('John');
@@ -422,21 +287,6 @@ class FormTest extends TestCase {
     $this->assertIsArray($errors['contact']['address']);
     $this->assertNull($errors['contact']['address']['street']);
     $this->assertNotNull($errors['contact']['address']['city']);
-  }
-
-  public function testGetErrorReturnsOnlyEnabledItemErrors() {
-    $form = new Form();
-    $form->name = new Input(); // Required, empty
-    $form->email = new Input(); // Required, empty
-    $form->phone = new Input(); // Required, empty
-    $form->email->setDisabled(true);
-
-    $form->validate();
-
-    $errors = $form->getError();
-    $this->assertArrayHasKey('name', $errors);
-    $this->assertArrayNotHasKey('email', $errors); // Disabled
-    $this->assertArrayHasKey('phone', $errors);
   }
 
   public function testGetErrorWithNestedFormPartiallyDisabled() {
@@ -483,5 +333,51 @@ class FormTest extends TestCase {
     $form = new Form();
     $form->setLabel('Contact Form');
     $this->assertSame('Contact Form', $form->getLabel());
+  }
+
+  // Form::isRequired / setRequired tests
+
+  public function testDefaultRequiredIsTrue() {
+    $form = new Form();
+    $this->assertTrue($form->isRequired());
+  }
+
+  public function testSetRequiredFalse() {
+    $form = new Form();
+    $result = $form->setRequired(false);
+
+    $this->assertSame($form, $result); // Fluent interface
+    $this->assertFalse($form->isRequired());
+  }
+
+  public function testSetRequiredTrue() {
+    $form = new Form();
+    $form->setRequired(false);
+    $form->setRequired(true);
+
+    $this->assertTrue($form->isRequired());
+  }
+
+  // Form::isDisabled / setDisabled tests
+
+  public function testDefaultDisabledIsFalse() {
+    $form = new Form();
+    $this->assertFalse($form->isDisabled());
+  }
+
+  public function testSetDisabledTrue() {
+    $form = new Form();
+    $result = $form->setDisabled(true);
+
+    $this->assertSame($form, $result); // Fluent interface
+    $this->assertTrue($form->isDisabled());
+  }
+
+  public function testSetDisabledFalse() {
+    $form = new Form();
+    $form->setDisabled(true);
+    $form->setDisabled(false);
+
+    $this->assertFalse($form->isDisabled());
   }
 }

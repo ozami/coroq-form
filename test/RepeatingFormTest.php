@@ -119,52 +119,9 @@ class RepeatingFormTest extends TestCase {
     $this->assertEquals('Tertiary', $repeating->getItem(2)->getLabel());
   }
 
-  public function testClearClearsAllItemValues() {
-    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new TextInput());
-    $repeating->setValue(['a', 'b', 'c']);
-
-    $repeating->clear();
-
-    $this->assertEquals(3, $repeating->count()); // Items still exist
-    $this->assertEquals(['', '', ''], $repeating->getValue());
-  }
-
   public function testIsEmptyReturnsTrueWhenNoItems() {
     $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
     $this->assertTrue($repeating->isEmpty());
-  }
-
-  public function testIsEmptyReturnsTrueWhenAllItemsEmpty() {
-    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
-    $repeating->setValue(['', '', '']);
-    $this->assertTrue($repeating->isEmpty());
-  }
-
-  public function testIsEmptyReturnsFalseWhenAnyItemHasValue() {
-    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
-    $repeating->setValue(['', 'a@example.com', '']);
-    $this->assertFalse($repeating->isEmpty());
-  }
-
-  public function testValidateSkipsWhenOptionalAndEmpty() {
-    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
-    $repeating->setRequired(false);
-    $repeating->setValue([]);
-
-    $this->assertTrue($repeating->validate());
-  }
-
-  public function testValidateValidatesEachItem() {
-    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => (new EmailInput())->setRequired(true));
-    $repeating->setValue(['valid@example.com', 'invalid-email', '']);
-
-    $valid = $repeating->validate();
-    $this->assertFalse($valid);
-
-    $errors = $repeating->getError();
-    $this->assertNull($errors[0]); // valid
-    $this->assertNotNull($errors[1]); // invalid format
-    $this->assertNotNull($errors[2]); // empty
   }
 
   public function testGetErrorReturnsArrayOfItemErrors() {
@@ -178,22 +135,6 @@ class RepeatingFormTest extends TestCase {
     $this->assertNull($errors[0]);
     $this->assertNotNull($errors[1]);
     $this->assertNull($errors[2]);
-  }
-
-  public function testHasErrorReturnsTrueWhenAnyItemHasError() {
-    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => (new EmailInput())->setRequired(true));
-    $repeating->setValue(['valid@example.com', '']);
-    $repeating->validate();
-
-    $this->assertTrue($repeating->hasError());
-  }
-
-  public function testHasErrorReturnsFalseWhenNoErrors() {
-    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => (new EmailInput())->setRequired(true));
-    $repeating->setValue(['a@example.com', 'b@example.com']);
-    $repeating->validate();
-
-    $this->assertFalse($repeating->hasError());
   }
 
   public function testGetItemReturnsItemAtIndex() {
@@ -244,32 +185,6 @@ class RepeatingFormTest extends TestCase {
     $this->assertEquals('', $item->getValue());
   }
 
-  public function testGetParsedValueReturnsTypedValues() {
-    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new IntegerInput());
-    $repeating->setValue(['10', '20', '30']);
-
-    $parsed = $repeating->getParsedValue();
-    $this->assertSame(10, $parsed[0]);
-    $this->assertSame(20, $parsed[1]);
-    $this->assertSame(30, $parsed[2]);
-  }
-
-  public function testGetFilledValueExcludesEmptyItems() {
-    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
-    $repeating->setValue(['a@example.com', '', 'c@example.com', '']);
-
-    $filled = $repeating->getFilledValue();
-    $this->assertEquals([0 => 'a@example.com', 2 => 'c@example.com'], $filled);
-  }
-
-  public function testGetFilledParsedValueExcludesEmptyItems() {
-    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new IntegerInput());
-    $repeating->setValue(['10', '', '30']);
-
-    $filled = $repeating->getFilledParsedValue();
-    $this->assertEquals([0 => 10, 2 => 30], $filled);
-  }
-
   public function testGetFilledValueWithNestedForms() {
     $repeating = (new RepeatingForm())->setFactory(function(int $i) {
       $form = new Form();
@@ -288,16 +203,6 @@ class RepeatingFormTest extends TestCase {
     $this->assertCount(2, $filled);
     $this->assertEquals(['name' => 'John', 'email' => 'john@example.com'], $filled[0]);
     $this->assertEquals(['name' => 'Jane'], $filled[2]);
-  }
-
-  public function testDisabledItemsExcludedFromGetValue() {
-    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
-    $repeating->setValue(['a@example.com', 'b@example.com', 'c@example.com']);
-
-    $repeating->getItem(1)->setDisabled(true);
-
-    $values = $repeating->getValue();
-    $this->assertEquals([0 => 'a@example.com', 2 => 'c@example.com'], $values);
   }
 
   public function testReadOnlyPreventsSetValue() {

@@ -21,6 +21,8 @@ use Coroq\Form\FormItem\FormItemInterface;
  *   $emails->setValue(['user@example.com', 'admin@example.com']);
  */
 class RepeatingForm extends AbstractFormItem implements FormInterface {
+  use FormItemCollectionTrait;
+
   /** @var array<int, FormItemInterface> Array of form items */
   private array $items = [];
 
@@ -43,27 +45,6 @@ class RepeatingForm extends AbstractFormItem implements FormInterface {
     $this->factory = $factory;
     $this->recreateItems();
     return $this;
-  }
-
-  /**
-   * Get all values as an indexed array
-   *
-   * @return array<int, mixed> Array of values
-   */
-  public function getValue(): array {
-    $values = [];
-    foreach ($this->getEnabledItems() as $index => $item) {
-      $values[$index] = $item->getValue();
-    }
-    return $values;
-  }
-
-  public function getParsedValue(): array {
-    $values = [];
-    foreach ($this->getEnabledItems() as $index => $item) {
-      $values[$index] = $item->getParsedValue();
-    }
-    return $values;
   }
 
   public function setValue(mixed $value): self {
@@ -95,96 +76,6 @@ class RepeatingForm extends AbstractFormItem implements FormInterface {
     }
 
     return $this;
-  }
-
-  public function clear(): self {
-    foreach ($this->items as $item) {
-      $item->clear();
-    }
-    return $this;
-  }
-
-  public function isEmpty(): bool {
-    if (count($this->getEnabledItems()) === 0) {
-      return true;
-    }
-    foreach ($this->getEnabledItems() as $item) {
-      if (!$item->isEmpty()) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  public function getFilledValue(): array {
-    $values = [];
-    foreach ($this->getEnabledItems() as $index => $item) {
-      if ($item->isEmpty()) {
-        continue;
-      }
-      if ($item instanceof FormInterface) {
-        $values[$index] = $item->getFilledValue();
-      }
-      else {
-        $values[$index] = $item->getValue();
-      }
-    }
-    return $values;
-  }
-
-  public function getFilledParsedValue(): array {
-    $values = [];
-    foreach ($this->getEnabledItems() as $index => $item) {
-      if ($item->isEmpty()) {
-        continue;
-      }
-      if ($item instanceof FormInterface) {
-        $values[$index] = $item->getFilledParsedValue();
-      }
-      else {
-        $values[$index] = $item->getParsedValue();
-      }
-    }
-    return $values;
-  }
-
-  public function validate(): bool {
-    // Skip validation if optional and empty
-    if (!$this->isRequired() && $this->isEmpty()) {
-      return true;
-    }
-
-    // Validate each item - factory controls required/optional per item
-    foreach ($this->getEnabledItems() as $item) {
-      $item->validate();
-    }
-
-    return !$this->hasError();
-  }
-
-  /**
-   * Get all errors from child items
-   *
-   * @return array<int, mixed>
-   */
-  public function getError(): array {
-    $errors = [];
-    foreach ($this->getEnabledItems() as $index => $item) {
-      $errors[$index] = $item->getError();
-    }
-    return $errors;
-  }
-
-  /**
-   * Check if any child item has errors
-   */
-  public function hasError(): bool {
-    foreach ($this->getEnabledItems() as $item) {
-      if ($item->hasError()) {
-        return true;
-      }
-    }
-    return false;
   }
 
   public function setMinItemCount(int $count): self {
@@ -240,19 +131,6 @@ class RepeatingForm extends AbstractFormItem implements FormInterface {
 
   public function count(): int {
     return count($this->items);
-  }
-
-  /**
-   * @return array<int, FormItemInterface>
-   */
-  protected function getEnabledItems(): array {
-    $enabledItems = [];
-    foreach ($this->items as $index => $item) {
-      if (!$item->isDisabled()) {
-        $enabledItems[$index] = $item;
-      }
-    }
-    return $enabledItems;
   }
 
   /**

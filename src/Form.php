@@ -19,36 +19,12 @@ use Coroq\Form\FormItem\FormItemInterface;
  *   $form->address->street = new TextInput();
  */
 class Form implements FormInterface {
+  use FormItemCollectionTrait;
+
   private bool $__disabled = false;
   private bool $__required = true;
   private bool $__readonly = false;
   private string $__label = "";
-
-  /**
-   * Get all values from enabled items as an associative array
-   *
-   * @return array<string, mixed> Array of name => value pairs
-   */
-  public function getValue(): array {
-    $values = [];
-    foreach ($this->getEnabledItems() as $name => $item) {
-      $values[$name] = $item->getValue();
-    }
-    return $values;
-  }
-
-  /**
-   * Get all parsed values with type conversion
-   *
-   * @return array<string, mixed> Array of name => parsed value pairs
-   */
-  public function getParsedValue(): array {
-    $values = [];
-    foreach ($this->getEnabledItems() as $name => $item) {
-      $values[$name] = $item->getParsedValue();
-    }
-    return $values;
-  }
 
   /**
    * Set values from an array
@@ -64,69 +40,6 @@ class Form implements FormInterface {
       $item->setValue($value[$name] ?? '');
     }
     return $this;
-  }
-
-  /**
-   * Clear all items (set to empty)
-   *
-   * @return self
-   */
-  public function clear(): self {
-    foreach ($this->getItems() as $item) {
-      $item->clear();
-    }
-    return $this;
-  }
-
-  /**
-   * Check if all items are empty
-   *
-   * @return bool
-   */
-  public function isEmpty(): bool {
-    foreach ($this->getEnabledItems() as $item) {
-      if (!$item->isEmpty()) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  /**
-   * Get only non-empty values recursively
-   *
-   * @return array<string, mixed> Array of name => value pairs (excluding empty)
-   */
-  public function getFilledValue(): array {
-    $values = [];
-    foreach ($this->getEnabledItems() as $name => $item) {
-      if ($item->isEmpty()) {
-        continue;
-      }
-      if ($item instanceof FormInterface) {
-        $values[$name] = $item->getFilledValue();
-      }
-      else {
-        $values[$name] = $item->getValue();
-      }
-    }
-    return $values;
-  }
-
-  public function getFilledParsedValue(): array {
-    $values = [];
-    foreach ($this->getEnabledItems() as $name => $item) {
-      if ($item->isEmpty()) {
-        continue;
-      }
-      if ($item instanceof FormInterface) {
-        $values[$name] = $item->getFilledParsedValue();
-      }
-      else {
-        $values[$name] = $item->getParsedValue();
-      }
-    }
-    return $values;
   }
 
   public function isDisabled(): bool {
@@ -165,35 +78,6 @@ class Form implements FormInterface {
     return $this;
   }
 
-  public function validate(): bool {
-    // Skip validation if optional and empty
-    if (!$this->isRequired() && $this->isEmpty()) {
-      return true;
-    }
-
-    foreach ($this->getEnabledItems() as $item) {
-      $item->validate();
-    }
-    return !$this->hasError();
-  }
-
-  public function getError(): array {
-    $errors = [];
-    foreach ($this->getEnabledItems() as $name => $item) {
-      $errors[$name] = $item->getError();
-    }
-    return $errors;
-  }
-
-  public function hasError(): bool {
-    foreach ($this->getEnabledItems() as $item) {
-      if ($item->hasError()) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   public function getItem(mixed $name): ?FormItemInterface {
     $items = $this->getItems();
     return $items[$name] ?? null;
@@ -202,7 +86,7 @@ class Form implements FormInterface {
   /**
    * @return array<FormItemInterface>
    */
-  protected function getItems(): array {
+  public function getItems(): array {
     $vars = getPublicProperties($this);
     $items = [];
     foreach ($vars as $name => $var) {
@@ -211,19 +95,6 @@ class Form implements FormInterface {
       }
     }
     return $items;
-  }
-
-  /**
-   * @return array<FormItemInterface>
-   */
-  protected function getEnabledItems(): array {
-    $enabledItems = [];
-    foreach ($this->getItems() as $name => $item) {
-      if (!$item->isDisabled()) {
-        $enabledItems[$name] = $item;
-      }
-    }
-    return $enabledItems;
   }
 }
 

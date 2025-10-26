@@ -27,5 +27,8 @@ interface FormInterface extends FormItemInterface {
 
   /** Get a form item by name/index */
   public function getItem(mixed $name): ?FormItemInterface;
+
+  /** Get all form items */
+  public function getItems(): array;
 }
 
