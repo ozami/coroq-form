@@ -448,40 +448,6 @@ class RepeatingFormTest extends TestCase {
     $this->assertNull($parsed[2]);
   }
 
-  public function testGetValueExpandsItemsToMinimum() {
-    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
-    $repeating->setMinItemCount(5);
-
-    // Manually add 2 items using addItem
-    $repeating->addItem('a@example.com');
-    $repeating->addItem('b@example.com');
-    $this->assertEquals(2, $repeating->count());
-
-    // Now call getValue() - should expand to 5 items while preserving existing 2
-    $values = $repeating->getValue();
-    $this->assertEquals(5, count($values));
-    $this->assertEquals('a@example.com', $values[0]);
-    $this->assertEquals('b@example.com', $values[1]);
-    $this->assertEquals('', $values[2]);
-    $this->assertEquals('', $values[3]);
-    $this->assertEquals('', $values[4]);
-  }
-
-  public function testGetParsedValueExpandsItemsToMinimum() {
-    $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new IntegerInput());
-    $repeating->setMinItemCount(3);
-
-    // Manually create 1 item (simulating a scenario where items exist but < minItemCount)
-    $repeating->addItem('25');
-    $this->assertEquals(1, $repeating->count());
-
-    // getParsedValue should expand to minimum
-    $parsed = $repeating->getParsedValue();
-    $this->assertEquals(3, count($parsed));
-    $this->assertSame(25, $parsed[0]);
-    $this->assertNull($parsed[1]);
-    $this->assertNull($parsed[2]);
-  }
 
   public function testGetFilledParsedValueWithNestedForms() {
     $repeating = (new RepeatingForm())->setFactory(function(int $i) {

@@ -41,26 +41,16 @@ class RepeatingForm extends AbstractFormItem implements FormInterface {
    */
   public function setFactory(Closure $factory): self {
     $this->factory = $factory;
+    $this->recreateItems();
     return $this;
   }
 
   /**
    * Get all values as an indexed array
    *
-   * Automatically expands to minItemCount if needed.
-   *
    * @return array<int, mixed> Array of values
    */
   public function getValue(): array {
-    // Ensure structural minimum by recreating if needed
-    if (count($this->items) < $this->minItemCount) {
-      $currentValues = [];
-      foreach ($this->items as $i => $item) {
-        $currentValues[$i] = $item->getValue();
-      }
-      $this->setValue($currentValues);
-    }
-
     $values = [];
     foreach ($this->getEnabledItems() as $index => $item) {
       $values[$index] = $item->getValue();
@@ -69,15 +59,6 @@ class RepeatingForm extends AbstractFormItem implements FormInterface {
   }
 
   public function getParsedValue(): array {
-    // Ensure structural minimum
-    if (count($this->items) < $this->minItemCount) {
-      $currentValues = [];
-      foreach ($this->items as $i => $item) {
-        $currentValues[$i] = $item->getValue();
-      }
-      $this->setValue($currentValues);
-    }
-
     $values = [];
     foreach ($this->getEnabledItems() as $index => $item) {
       $values[$index] = $item->getParsedValue();
@@ -90,27 +71,27 @@ class RepeatingForm extends AbstractFormItem implements FormInterface {
       return $this;
     }
 
-    if (!$this->factory) {
-      throw new \LogicException("Factory not set");
-    }
-
     if (!is_array($value)) {
       $value = [];
     }
 
-    // Ensure sequential indices
+    // Reindex to sequential keys
     $value = array_values($value);
 
-    // Determine target count
-    $targetCount = max(count($value), $this->minItemCount);
-    $targetCount = min($targetCount, $this->maxItemCount);
+    // Recreate items to minItemCount
+    $this->recreateItems();
 
-    // Recreate all items from scratch
-    $this->items = [];
-    for ($i = 0; $i < $targetCount; $i++) {
-      $item = ($this->factory)($i);
-      $item->setValue($value[$i] ?? '');
-      $this->items[$i] = $item;
+    // Set values on existing items and create additional items as needed
+    foreach ($value as $i => $itemValue) {
+      if ($i >= $this->maxItemCount) {
+        break;
+      }
+
+      if (!isset($this->items[$i])) {
+        $this->items[$i] = ($this->factory)($i);
+      }
+
+      $this->items[$i]->setValue($itemValue);
     }
 
     return $this;
@@ -208,6 +189,9 @@ class RepeatingForm extends AbstractFormItem implements FormInterface {
 
   public function setMinItemCount(int $count): self {
     $this->minItemCount = $count;
+    if ($this->factory) {
+      $this->recreateItems();
+    }
     return $this;
   }
 
@@ -217,6 +201,9 @@ class RepeatingForm extends AbstractFormItem implements FormInterface {
 
   public function setMaxItemCount(int $count): self {
     $this->maxItemCount = $count;
+    if ($this->factory) {
+      $this->recreateItems();
+    }
     return $this;
   }
 
@@ -266,5 +253,26 @@ class RepeatingForm extends AbstractFormItem implements FormInterface {
       }
     }
     return $enabledItems;
+  }
+
+  /**
+   * Recreate all child items from factory
+   *
+   * Destroys existing items and creates new ones based on minItemCount/maxItemCount.
+   * All values will be lost.
+   *
+   * @return void
+   */
+  private function recreateItems(): void {
+    if (!$this->factory) {
+      throw new \LogicException("Factory not set");
+    }
+
+    // Recreate items to meet minItemCount
+    $this->items = [];
+    for ($i = 0; $i < $this->minItemCount; $i++) {
+      $item = ($this->factory)($i);
+      $this->items[$i] = $item;
+    }
   }
 }
