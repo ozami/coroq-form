@@ -35,7 +35,7 @@ class DerivedTest extends TestCase {
     $this->assertSame('abc', $derived->getValue());
   }
 
-  public function testGetValueReturnsNullWhenSourceHasError() {
+  public function testGetValueCalculatesEvenWhenSourceHasError() {
     $input1 = new Input();  // Required, empty - will fail validation
     $input2 = (new Input())->setValue('test');
 
@@ -46,8 +46,9 @@ class DerivedTest extends TestCase {
       ->addSource($input1)
       ->addSource($input2);
 
-    // Source input1 is invalid, so derived value should be null
-    $this->assertNull($derived->getValue());
+    // getValue() should calculate regardless of source validity
+    // Calculator receives empty string from input1 and 'test' from input2
+    $this->assertSame('test', $derived->getValue());
   }
 
   public function testGetValueReturnsNullWhenNoCalculator() {

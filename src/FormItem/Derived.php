@@ -16,12 +16,16 @@ use Coroq\Form\Error\SourceItemInvalidError;
  * Derived items are always readonly - their value and validity come from
  * their dependencies, not from user input.
  *
+ * Important: getValue() does NOT validate sources. The value calculator receives
+ * raw values which may be invalid/empty. Calculators should handle this gracefully.
+ * Validation of sources happens when validate() is called.
+ *
  * Examples:
  *
  * Calculated value from multiple inputs:
  * ```php
  * $form->fullName = (new Derived())
- *   ->setValueCalculator(fn($first, $last) => $first . ' ' . $last)
+ *   ->setValueCalculator(fn($first, $last) => trim(($first ?? '') . ' ' . ($last ?? '')))
  *   ->addSource($form->firstName)
  *   ->addSource($form->lastName);
  * ```
@@ -41,7 +45,7 @@ use Coroq\Form\Error\SourceItemInvalidError;
  * Calculated value with validation:
  * ```php
  * $form->displayName = (new Derived())
- *   ->setValueCalculator(fn($first, $last) => strtoupper($first . ' ' . $last))
+ *   ->setValueCalculator(fn($first, $last) => strtoupper(trim(($first ?? '') . ' ' . ($last ?? ''))))
  *   ->setValidator(fn($first, $last, $calculated) =>
  *     strlen($calculated) > 50 ? new TooLongError($this) : null
  *   )
@@ -119,22 +123,18 @@ class Derived extends AbstractFormItem {
   /**
    * Get calculated value
    *
-   * Returns null if no value calculator is set or if any source is invalid.
-   * Otherwise calculates and returns the value.
+   * Returns null if no value calculator is set.
+   * Otherwise calculates and returns the value from source values.
+   *
+   * Note: Does not validate sources. The calculator receives raw values
+   * (which may be invalid) and must handle them appropriately.
    */
   public function getValue(): mixed {
     if (!$this->valueCalculator) {
       return null;
     }
 
-    // Validate all sources first
-    foreach ($this->sources as $source) {
-      if (!$source->validate()) {
-        return null;
-      }
-    }
-
-    // Calculate value
+    // Get source values and calculate
     $sourceValues = [];
     foreach ($this->sources as $source) {
       $sourceValues[] = $source->getValue();
