@@ -30,6 +30,28 @@ This is a **validation and data processing layer** that sits between your HTTP l
 composer require coroq/form
 ```
 
+## Configuration
+
+### UTF-8 Invalid Character Handling
+
+This library assumes all input is UTF-8 encoded. Invalid UTF-8 byte sequences are automatically replaced with a substitute character during filtering.
+
+By default, PHP uses `?` (U+003F QUESTION MARK) as the substitute character. For better visibility of data corruption, it's recommended to use `�` (U+FFFD REPLACEMENT CHARACTER) instead by configuring it in your application bootstrap:
+
+```php
+// Recommended: Use Unicode Replacement Character for invalid UTF-8 bytes
+mb_substitute_character(0xFFFD);  // U+FFFD: �
+```
+
+Alternative configurations:
+```php
+mb_substitute_character('none');   // Remove invalid bytes silently
+mb_substitute_character('long');   // Use U+XXXX notation
+mb_substitute_character('entity'); // Use &#XXXX; HTML entities
+```
+
+See [mb_substitute_character documentation](https://www.php.net/manual/en/function.mb-substitute-character.php) for more options.
+
 ## Quick Start
 
 ```php

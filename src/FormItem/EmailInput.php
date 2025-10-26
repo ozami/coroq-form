@@ -32,6 +32,7 @@ class EmailInput extends Input {
    */
   public function filter($value): string {
     $value = "$value";
+    $value = $this->scrubUtf8($value);
     $value = $this->toHalfwidthAscii($value);
     $value = $this->trim($value);
     if ($this->lowercaseDomain) {

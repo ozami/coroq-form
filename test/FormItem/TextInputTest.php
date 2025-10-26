@@ -5,6 +5,11 @@ use Coroq\Form\Error\PatternMismatchError;
 use PHPUnit\Framework\TestCase;
 
 class TextInputTest extends TestCase {
+  public static function setUpBeforeClass(): void {
+    // Configure UTF-8 replacement character for tests
+    mb_substitute_character(0xFFFD);
+  }
+
   public function testTrim() {
     $ws = " \t\n\r\x00\x0b\xc2\xa0　";
     $sample = "{$ws}T{$ws}T{$ws}";
@@ -38,8 +43,15 @@ class TextInputTest extends TestCase {
       ->setEol(null)
       ->setNoControl(false)
       ->setValue($non_utf8);
-    $input->validate();
-    $this->assertInstanceOf(InvalidError::class, $input->getError());
+
+    // Invalid UTF-8 gets replaced with replacement characters during filter
+    $value = $input->getValue();
+    $this->assertTrue(mb_check_encoding($value, 'UTF-8'));
+    $this->assertStringContainsString("\u{FFFD}", $value);
+
+    // Validation passes - replacement characters are valid UTF-8
+    $this->assertTrue($input->validate());
+    $this->assertNull($input->getError());
   }
 
   public function testValidatePattern() {
@@ -346,5 +358,56 @@ class TextInputTest extends TestCase {
 
     $this->assertFalse($input->validate());
     $this->assertInstanceOf(\Coroq\Form\Error\TooShortError::class, $input->getError());
+  }
+
+  // UTF-8 handling tests
+
+  public function testFilterReplacesInvalidUtf8WithReplacementCharacter() {
+    $input = new TextInput();
+    // Invalid UTF-8 bytes
+    $input->setValue("\x80\x81\x82");
+
+    // Should be replaced with replacement character (U+FFFD)
+    $this->assertSame("\u{FFFD}\u{FFFD}\u{FFFD}", $input->getValue());
+  }
+
+  public function testFilterPreservesValidUtf8PartsAndReplacesInvalidBytes() {
+    $input = new TextInput();
+    // Mixed: valid UTF-8 "Hello" + invalid byte + valid "World"
+    $input->setValue("Hello\x80World");
+
+    // Invalid byte should become replacement character
+    $this->assertSame("Hello\u{FFFD}World", $input->getValue());
+  }
+
+  public function testFilterHandlesCompletelyInvalidUtf8() {
+    $input = new TextInput();
+    // All bytes invalid
+    $input->setValue("\xFF\xFE\xFD");
+
+    // All should become replacement characters
+    $this->assertSame("\u{FFFD}\u{FFFD}\u{FFFD}", $input->getValue());
+  }
+
+  public function testFilterDoesNotCrashWithInvalidUtf8() {
+    $input = (new TextInput())
+      ->setTrim(TextInput::BOTH)
+      ->setNoWhitespace(true)
+      ->setNoControl(true);
+
+    // This used to cause fatal error: preg_replace NULL cascade
+    $input->setValue("\x80\x81\x82");
+
+    // Should not crash - replacement characters are valid UTF-8
+    $this->assertSame("\u{FFFD}\u{FFFD}\u{FFFD}", $input->getValue());
+  }
+
+  public function testInvalidUtf8PassesValidationAfterReplacement() {
+    $input = (new TextInput())->setRequired(true);
+    $input->setValue("\x80\x81\x82");
+
+    // Replacement characters are valid UTF-8, not empty
+    $this->assertTrue($input->validate());
+    $this->assertFalse($input->hasError());
   }
 }

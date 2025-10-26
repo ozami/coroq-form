@@ -252,4 +252,19 @@ class EmailInputTest extends TestCase {
     $input->setValue('TEST@EXAMPLE.COM');
     $this->assertSame('TEST@example.com', $input->getValue());
   }
+
+  public static function setUpBeforeClass(): void {
+    // Configure UTF-8 replacement character for tests
+    mb_substitute_character(0xFFFD);
+  }
+
+  public function testInvalidUtf8ReplacedWithReplacementCharacter() {
+    $input = new EmailInput();
+    $input->setValue("test\x80@example.com");
+
+    // Invalid UTF-8 byte replaced with �
+    $value = $input->getValue();
+    $this->assertTrue(mb_check_encoding($value, 'UTF-8'));
+    $this->assertStringContainsString("\u{FFFD}", $value);
+  }
 }

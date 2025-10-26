@@ -3,9 +3,17 @@ declare(strict_types=1);
 namespace Coroq\Form\FormItem;
 
 /**
- * Provides string filtering methods (trim, mb_convert_kana)
+ * Provides string filtering methods (trim, mb_convert_kana, UTF-8 scrubbing)
  */
 trait StringFilterTrait {
+  /**
+   * Replace invalid UTF-8 bytes with substitute character
+   * Configure substitute character with mb_substitute_character() in your application bootstrap
+   */
+  protected function scrubUtf8(string $value): string {
+    return mb_scrub($value, 'UTF-8');
+  }
+
   /**
    * Trim whitespace from start
    * Removes ASCII spaces, control chars, NBSP, and full-width space

@@ -49,4 +49,16 @@ class NumberInputTest extends TestCase {
     $this->assertSame(99.99, $input->getParsedValue());
     $this->assertSame($input->getNumber(), $input->getParsedValue());
   }
+
+  public static function setUpBeforeClass(): void {
+    mb_substitute_character(0xFFFD);
+  }
+
+  public function testInvalidUtf8DoesNotCauseFatalError() {
+    $input = new NumberInput();
+    $input->setValue("123\x80\x81\x82");
+    // Should not crash - invalid bytes replaced with �
+    $value = $input->getValue();
+    $this->assertTrue(mb_check_encoding($value, 'UTF-8'));
+  }
 }

@@ -39,6 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for read-only form items with `setReadOnly(bool)`
 - Specific error classes: EmptyError, InvalidError, TooShortError, TooLongError, TooSmallError, TooLargeError, NotIntegerError, NotNumericError, InvalidEmailError, InvalidUrlError, InvalidDateError, NotKatakanaError, NotInOptionsError, TooFewSelectionsError, TooManySelectionsError, PatternMismatchError, FileNotFoundError, FileTooLargeError, FileTooSmallError, InvalidMimeTypeError, InvalidExtensionError
 
+### Fixed
+- All string-based inputs (TextInput, EmailInput, UrlInput, TelInput, NumberInput, IntegerInput) now use `mb_scrub()` via StringFilterTrait to replace invalid UTF-8 byte sequences, preventing fatal TypeError from `preg_replace()` returning NULL
+- DateInput timezone bug - dates no longer shift by ±1 day due to UTC forcing
+
 ### Migration
 See [MIGRATION.md](MIGRATION.md) for detailed migration guide from 2.1.0 to 3.0.0.
 

@@ -19,6 +19,7 @@ class TelInput extends Input {
    */
   public function filter($value): string {
     $value = "$value";
+    $value = $this->scrubUtf8($value);
     $value = $this->toHalfwidthAscii($value);
 
     // Remove all non-numeric characters except +

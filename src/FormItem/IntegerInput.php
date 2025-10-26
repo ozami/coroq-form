@@ -10,14 +10,16 @@ use Coroq\Form\Error\NotIntegerError;
  */
 class IntegerInput extends Input implements HasNumericRangeInterface {
   use NumericRangeTrait;
+  use StringFilterTrait;
 
   /**
    * @param mixed $value
    * @return string
    */
   public function filter($value): string {
-    $value = parent::filter($value);
-    $value = mb_convert_kana($value, "as", "UTF-8");
+    $value = "$value";
+    $value = $this->scrubUtf8($value);
+    $value = $this->toHalfwidthAscii($value);
     $value = preg_replace("/[[:space:]]/u", "", $value);
     return $value;
   }

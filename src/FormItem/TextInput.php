@@ -11,6 +11,7 @@ use Coroq\Form\Error\PatternMismatchError;
  */
 class TextInput extends Input implements HasLengthRangeInterface {
   use LengthRangeTrait;
+  use StringFilterTrait;
   const UPPER = MB_CASE_UPPER;
   const LOWER = MB_CASE_LOWER;
   const TITLE = MB_CASE_TITLE;
@@ -126,6 +127,7 @@ class TextInput extends Input implements HasLengthRangeInterface {
    */
   public function filter($value): string {
     $value = "$value";
+    $value = $this->scrubUtf8($value);
     if ($this->mb !== null) {
       $value = mb_convert_kana($value, $this->mb, "UTF-8");
     }
@@ -161,9 +163,6 @@ class TextInput extends Input implements HasLengthRangeInterface {
    * @return Error|null
    */
   public function doValidate($value): ?Error {
-    if (!preg_match("//u", $value)) {
-      return new InvalidError($this);
-    }
     $lengthError = $this->validateLength($value);
     if ($lengthError !== null) {
       return $lengthError;
