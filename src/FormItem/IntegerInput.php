@@ -9,7 +9,10 @@ use Coroq\Form\Error\NotIntegerError;
  * Integer input with numeric validation and range constraints
  */
 class IntegerInput extends Input implements HasNumericRangeInterface {
-  use NumericRangeTrait;
+  use NumericRangeTrait {
+    setMin as private setMinInternal;
+    setMax as private setMaxInternal;
+  }
   use StringFilterTrait;
 
   public function __construct() {
@@ -23,7 +26,8 @@ class IntegerInput extends Input implements HasNumericRangeInterface {
    * Set minimum value
    * Must be >= PHP_INT_MIN to guarantee getInteger() can return int
    */
-  public function setMin(string $min): self {
+  public function setMin(int|float|string $min): self {
+    $min = (string)$min;
     if (bccomp($min, (string)PHP_INT_MIN) < 0) {
       throw new \InvalidArgumentException(
         "IntegerInput min must be >= PHP_INT_MIN (" . PHP_INT_MIN . "), got: " . $min
@@ -41,7 +45,8 @@ class IntegerInput extends Input implements HasNumericRangeInterface {
    * Set maximum value
    * Must be <= PHP_INT_MAX to guarantee getInteger() can return int
    */
-  public function setMax(string $max): self {
+  public function setMax(int|float|string $max): self {
+    $max = (string)$max;
     if (bccomp($max, (string)PHP_INT_MIN) < 0) {
       throw new \InvalidArgumentException(
         "IntegerInput max must be >= PHP_INT_MIN (" . PHP_INT_MIN . "), got: " . $max

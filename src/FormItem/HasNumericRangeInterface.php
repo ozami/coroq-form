@@ -14,6 +14,6 @@ namespace Coroq\Form\FormItem;
 interface HasNumericRangeInterface {
   public function getMin(): string|null;
   public function getMax(): string|null;
-  public function setMin(string $min): self;
-  public function setMax(string $max): self;
+  public function setMin(int|float|string $min): self;
+  public function setMax(int|float|string $max): self;
 }

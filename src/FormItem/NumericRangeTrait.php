@@ -24,11 +24,12 @@ trait NumericRangeTrait {
   }
 
   /**
-   * Internal setter for min value
-   * Use public setMin() in concrete classes (IntegerInput, NumberInput)
+   * Set minimum value
+   * Override this method in concrete classes for additional validation,
+   * then call setMinValue() to set the actual value
    */
-  protected function setMinInternal(string $min): self {
-    $this->min = $min;
+  public function setMin(int|float|string $min): self {
+    $this->min = (string)$min;
     return $this;
   }
 
@@ -41,11 +42,12 @@ trait NumericRangeTrait {
   }
 
   /**
-   * Internal setter for max value
-   * Use public setMax() in concrete classes (IntegerInput, NumberInput)
+   * Set maximum value
+   * Override this method in concrete classes for additional validation,
+   * then call setMaxValue() to set the actual value
    */
-  protected function setMaxInternal(string $max): self {
-    $this->max = $max;
+  public function setMax(int|float|string $max): self {
+    $this->max = (string)$max;
     return $this;
   }
 

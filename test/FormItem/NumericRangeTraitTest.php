@@ -10,15 +10,6 @@ use PHPUnit\Framework\TestCase;
 class NumericRangeTestInput extends Input implements HasNumericRangeInterface {
   use NumericRangeTrait;
 
-  // Public setters for testing (similar to NumberInput)
-  public function setMin(string $min): self {
-    return $this->setMinInternal($min);
-  }
-
-  public function setMax(string $max): self {
-    return $this->setMaxInternal($max);
-  }
-
   // Expose validateRange for testing
   public function testValidateRange($value) {
     return $this->validateRange((string)$value);
