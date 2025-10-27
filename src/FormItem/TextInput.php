@@ -147,7 +147,7 @@ class TextInput extends Input implements HasLengthRangeInterface {
       $value = preg_replace("/[\\x00-\\x09\\x0B\\x0c\\x0e-\\x1f\\x7f\\xa0]/u", " ", $value);
     }
     if ($this->noWhitespace) {
-      $value = preg_replace("/[[:space:]\\00\\xa0　]/u", "", $value);
+      $value = $this->removeWhitespace($value);
     }
     if ($this->trim == self::LEFT || $this->trim == self::BOTH) {
       $value = preg_replace("/^[[:space:]\\00\\xa0　]+/u", "", $value);

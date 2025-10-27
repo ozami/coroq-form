@@ -63,7 +63,7 @@ class IntegerInput extends Input implements HasNumericRangeInterface {
     $value = "$value";
     $value = $this->scrubUtf8($value);
     $value = $this->toHalfwidthAscii($value);
-    $value = preg_replace("/[[:space:]]/u", "", $value);
+    $value = $this->removeWhitespace($value);
 
     // Remove trailing .0000... (e.g., "123.00" -> "123", "123.10" unchanged)
     $value = preg_replace('/\.0+$/', '', $value);

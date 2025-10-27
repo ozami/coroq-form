@@ -34,7 +34,7 @@ class NumberInput extends Input implements HasNumericRangeInterface {
     $value = "$value";
     $value = $this->scrubUtf8($value);
     $value = $this->toHalfwidthAscii($value);
-    $value = preg_replace("/[[:space:]]/u", "", $value);
+    $value = $this->removeWhitespace($value);
     return $value;
   }
 

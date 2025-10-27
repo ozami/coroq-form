@@ -44,4 +44,12 @@ trait StringFilterTrait {
   protected function toHalfwidthAscii(string $value): string {
     return mb_convert_kana($value, "as", "UTF-8");
   }
+
+  /**
+   * Remove all whitespace characters
+   * Removes ASCII spaces, control chars, NBSP, and full-width space
+   */
+  protected function removeWhitespace(string $value): string {
+    return preg_replace("/[[:space:]\\00\\xa0　]/u", "", $value);
+  }
 }
