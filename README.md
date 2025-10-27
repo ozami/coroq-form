@@ -1834,13 +1834,13 @@ use Coroq\Form\FormItem\NumberInput;
 use Coroq\Form\FormItem\IntegerInput;
 
 $number = new NumberInput();
-$number->setMin(int|float);
-$number->setMax(int|float);
+$number->setMin(string);
+$number->setMax(string);
 $value = $number->getNumber();           // float|null
 
 $int = new IntegerInput();
-$int->setMin(int);
-$int->setMax(int);
+$int->setMin(string);
+$int->setMax(string);
 $value = $int->getInteger();             // int|null
 ```
 
