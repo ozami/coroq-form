@@ -6,9 +6,18 @@ use Coroq\Form\Error\TooLargeError;
 use PHPUnit\Framework\TestCase;
 
 class NumberInputTest extends TestCase {
-  public function testFilter() {
-    $input = (new NumberInput())->setValue('　１２３．４５　');
+  public function testFilterUsesStringFilterTrait() {
+    $input = new NumberInput();
+
+    // Verify filter calls toHalfwidthAscii() (one example is enough)
+    $input->setValue('１２３．４５');
     $this->assertSame('123.45', $input->getValue());
+
+    // Verify filter calls removeWhitespace() (one example is enough)
+    $input->setValue('1 2 3.4 5');
+    $this->assertSame('123.45', $input->getValue());
+
+    // Details of what constitutes "whitespace" or "full-width" are tested in StringFilterTraitTest
   }
 
   public function testValidateNumeric() {

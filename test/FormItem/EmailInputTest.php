@@ -4,9 +4,18 @@ use Coroq\Form\Error\InvalidEmailError;
 use PHPUnit\Framework\TestCase;
 
 class EmailInputTest extends TestCase {
-  public function testFilter() {
-    $input = (new EmailInput())->setValue(' ＴＥＳＴ＠example.com ');
-    $this->assertSame('TEST@example.com', $input->getValue());
+  public function testFilterUsesStringFilterTrait() {
+    $input = new EmailInput();
+
+    // Verify filter calls trim() (one example is enough)
+    $input->setValue('  test@example.com  ');
+    $this->assertSame('test@example.com', $input->getValue());
+
+    // Verify filter calls toHalfwidthAscii() (one example is enough)
+    $input->setValue('ｔｅｓｔ＠example.com');
+    $this->assertSame('test@example.com', $input->getValue());
+
+    // Details of trim/toHalfwidthAscii are tested in StringFilterTraitTest
   }
 
   public function testLowerCaseDomain() {
@@ -209,15 +218,6 @@ class EmailInputTest extends TestCase {
     $this->assertFalse($input->isEmpty());
   }
 
-  public function testFilterTrimsWhitespace() {
-    $input = (new EmailInput())->setValue('  test@example.com  ');
-    $this->assertSame('test@example.com', $input->getValue());
-  }
-
-  public function testFilterConvertsFullWidthCharacters() {
-    $input = (new EmailInput())->setValue('ｔｅｓｔ＠ｅｘａｍｐｌｅ．ｃｏｍ');
-    $this->assertSame('test@example.com', $input->getValue());
-  }
 
   public function testValidateEmptyWhenRequired() {
     $input = (new EmailInput())->setRequired(true);

@@ -4,14 +4,18 @@ use Coroq\Form\Error\InvalidUrlError;
 use PHPUnit\Framework\TestCase;
 
 class UrlInputTest extends TestCase {
-  public function testFilterConvertsFullWidthToHalfWidth() {
-    $input = (new UrlInput())->setValue('ｈｔｔｐ：／／ｅｘａｍｐｌｅ．ｃｏｍ');
-    $this->assertSame('http://example.com', $input->getValue());
-  }
+  public function testFilterUsesStringFilterTrait() {
+    $input = new UrlInput();
 
-  public function testFilterTrimsWhitespace() {
-    $input = (new UrlInput())->setValue('  https://example.com  ');
+    // Verify filter calls trim() (one example is enough)
+    $input->setValue('  https://example.com  ');
     $this->assertSame('https://example.com', $input->getValue());
+
+    // Verify filter calls toHalfwidthAscii() (one example is enough)
+    $input->setValue('ｈｔｔｐ://example.com');
+    $this->assertSame('http://example.com', $input->getValue());
+
+    // Details of trim/toHalfwidthAscii are tested in StringFilterTraitTest
   }
 
   public function testValidateWithValidHttpUrl() {

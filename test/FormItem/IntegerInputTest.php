@@ -6,11 +6,10 @@ use Coroq\Form\Error\TooLargeError;
 use PHPUnit\Framework\TestCase;
 
 class IntegerInputTest extends TestCase {
-  public function testFilter() {
-    $input = (new IntegerInput())->setValue('　１２３　');
-    $this->assertSame('123', $input->getValue());
+  public function testFilterRemovesTrailingZeros() {
+    $input = new IntegerInput();
 
-    // Test trailing zeros removal
+    // Trailing zeros removal (IntegerInput-specific)
     $input->setValue('123.00');
     $this->assertSame('123', $input->getValue());
 
@@ -20,12 +19,29 @@ class IntegerInputTest extends TestCase {
     $input->setValue('-456.00');
     $this->assertSame('-456', $input->getValue());
 
+    $input->setValue('0.0');
+    $this->assertSame('0', $input->getValue());
+
     // Non-zero decimal should NOT be removed
     $input->setValue('123.10');
     $this->assertSame('123.10', $input->getValue());
 
     $input->setValue('123.01');
     $this->assertSame('123.01', $input->getValue());
+  }
+
+  public function testFilterUsesStringFilterTrait() {
+    $input = new IntegerInput();
+
+    // Verify filter calls toHalfwidthAscii() (one example is enough)
+    $input->setValue('１２３');
+    $this->assertSame('123', $input->getValue());
+
+    // Verify filter calls removeWhitespace() (one example is enough)
+    $input->setValue('1 2 3');
+    $this->assertSame('123', $input->getValue());
+
+    // Details of what constitutes "whitespace" or "full-width" are tested in StringFilterTraitTest
   }
 
   public function testValidateInteger() {
