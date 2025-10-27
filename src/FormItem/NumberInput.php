@@ -13,6 +13,20 @@ class NumberInput extends Input implements HasNumericRangeInterface {
   use StringFilterTrait;
 
   /**
+   * Set minimum value
+   */
+  public function setMin(string $min): self {
+    return $this->setMinInternal($min);
+  }
+
+  /**
+   * Set maximum value
+   */
+  public function setMax(string $max): self {
+    return $this->setMaxInternal($max);
+  }
+
+  /**
    * @param mixed $value
    * @return string
    */
@@ -40,7 +54,7 @@ class NumberInput extends Input implements HasNumericRangeInterface {
     if (!$this->isNumeric($value)) {
       return new NotNumericError($this);
     }
-    $rangeError = $this->validateRange($value);
+    $rangeError = $this->validateRange((string)$value);
     if ($rangeError !== null) {
       return $rangeError;
     }

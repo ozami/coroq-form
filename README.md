@@ -370,6 +370,12 @@ echo $form->price->getNumber();          // 123.45 (float)
 echo $form->quantity->getInteger();      // 42 or null
 ```
 
+**Note on IntegerInput limits:**
+- IntegerInput validates values against PHP_INT_MIN to PHP_INT_MAX range
+- Values outside this range (e.g., very large database bigint IDs) will fail validation with TooLargeError/TooSmallError
+- `getInteger()` returns null for values outside PHP int range
+- For very large integers (e.g., Twitter snowflake IDs, large database bigints), use TextInput instead
+
 ### Date Input
 
 ```php
@@ -1910,6 +1916,7 @@ $isEmpty = $repeating->isEmpty();
 ## Requirements
 
 - PHP >= 8.0
+- bcmath extension (for precise integer validation beyond PHP_INT_MAX/MIN)
 
 ## License
 

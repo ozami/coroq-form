@@ -6,47 +6,91 @@ use Coroq\Form\Error\Error;
 use Coroq\Form\Error\TooSmallError;
 use Coroq\Form\Error\TooLargeError;
 
-define("COROQ_INPUT_NUMERIC_MINUS_INF", -INF);
-
 /**
  * Provides min/max numeric range validation
  */
 trait NumericRangeTrait {
-  /** @var int|float */
-  protected $min = COROQ_INPUT_NUMERIC_MINUS_INF;
-  /** @var int|float */
-  protected $max = INF;
+  /** String representation for precise bcmath comparison */
+  protected string|null $min = null;
+  /** String representation for precise bcmath comparison */
+  protected string|null $max = null;
 
-  public function getMin(): int|float {
+  /**
+   * Get minimum value as string
+   * Returns null when no minimum is set (equivalent to -INF)
+   */
+  public function getMin(): string|null {
     return $this->min;
   }
 
-  public function setMin(int|float $min): self {
+  /**
+   * Internal setter for min value
+   * Use public setMin() in concrete classes (IntegerInput, NumberInput)
+   */
+  protected function setMinInternal(string $min): self {
     $this->min = $min;
     return $this;
   }
 
-  public function getMax(): int|float {
+  /**
+   * Get maximum value as string
+   * Returns null when no maximum is set (equivalent to INF)
+   */
+  public function getMax(): string|null {
     return $this->max;
   }
 
-  public function setMax(int|float $max): self {
+  /**
+   * Internal setter for max value
+   * Use public setMax() in concrete classes (IntegerInput, NumberInput)
+   */
+  protected function setMaxInternal(string $max): self {
     $this->max = $max;
     return $this;
   }
 
   /**
    * Validate value is within min/max range
+   * Uses bcmath with dynamic scale detection for precise comparison
    *
+   * @param string $value Numeric value as string
    * @return Error|null TooSmallError or TooLargeError if out of range
    */
-  protected function validateRange($value): ?Error {
-    if ($value < $this->min) {
-      return new TooSmallError($this);
+  protected function validateRange(string $value): ?Error {
+    if ($this->min !== null) {
+      $scale = $this->detectRequiredScale($value, $this->min);
+      if (bccomp($value, $this->min, $scale) < 0) {
+        return new TooSmallError($this);
+      }
     }
-    if ($value > $this->max) {
-      return new TooLargeError($this);
+
+    if ($this->max !== null) {
+      $scale = $this->detectRequiredScale($value, $this->max);
+      if (bccomp($value, $this->max, $scale) > 0) {
+        return new TooLargeError($this);
+      }
     }
+
     return null;
+  }
+
+  /**
+   * Detect required decimal scale for bccomp from two values
+   */
+  private function detectRequiredScale(string $val1, string $val2): int {
+    $scale1 = $this->getDecimalPlaces($val1);
+    $scale2 = $this->getDecimalPlaces($val2);
+    return max($scale1, $scale2);
+  }
+
+  /**
+   * Get number of decimal places in a numeric string
+   */
+  private function getDecimalPlaces(string $value): int {
+    if (strpos($value, '.') === false) {
+      return 0;
+    }
+    $parts = explode('.', $value);
+    return strlen($parts[1]);
   }
 }

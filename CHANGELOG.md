@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - All string-based inputs (TextInput, EmailInput, UrlInput, TelInput, NumberInput, IntegerInput) now use `mb_scrub()` via StringFilterTrait to replace invalid UTF-8 byte sequences, preventing fatal TypeError from `preg_replace()` returning NULL
 - DateInput timezone bug - dates no longer shift by ±1 day due to UTC forcing
+- IntegerInput precision bug - now correctly validates integers beyond PHP_INT_MAX/MIN using bcmath, preventing silent rejection of valid large integers
+- NumericRangeTrait now uses bcmath with dynamic scale detection for precise comparison of both integers and floats
 
 ### Migration
 See [MIGRATION.md](MIGRATION.md) for detailed migration guide from 2.1.0 to 3.0.0.
