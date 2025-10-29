@@ -1,5 +1,6 @@
 <?php
 use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\FormItem\UnicodeNormalization;
 use Coroq\Form\Error\InvalidError;
 use Coroq\Form\Error\PatternMismatchError;
 use PHPUnit\Framework\TestCase;
@@ -337,9 +338,194 @@ class TextInputTest extends TestCase {
       ->setNoControl(false)
       ->setEol("\r\n")
       ->setTrim(TextInput::LEFT)
-      ->setPattern('/test/');
+      ->setPattern('/test/')
+      ->setUnicodeNormalization(UnicodeNormalization::NFC);
 
     $this->assertSame($input, $result);
+  }
+
+  // Unicode normalization tests
+
+  public function testUnicodeNormalizationNFCDefault() {
+    if (!extension_loaded('intl')) {
+      $this->markTestSkipped('intl extension not available');
+    }
+
+    // NFCis default
+    $input = (new TextInput())
+      ->setTrim(null)
+      ->setNoControl(false);
+
+    // Decomposed form (NFD): か (U+304B) + ゛ (U+3099)
+    $decomposed = "\u{304B}\u{3099}";
+    // Composed form (NFC): が (U+304C)
+    $composed = "\u{304C}";
+
+    $input->setValue($decomposed);
+    $this->assertSame($composed, $input->getValue());
+  }
+
+  public function testUnicodeNormalizationNFCExplicit() {
+    if (!extension_loaded('intl')) {
+      $this->markTestSkipped('intl extension not available');
+    }
+
+    $input = (new TextInput())
+      ->setUnicodeNormalization(UnicodeNormalization::NFC)
+      ->setTrim(null)
+      ->setNoControl(false);
+
+    // Decomposed: é (e + combining acute)
+    $decomposed = "e\u{0301}";
+    // Composed: é
+    $composed = "\u{00E9}";
+
+    $input->setValue($decomposed);
+    $this->assertSame($composed, $input->getValue());
+  }
+
+  public function testUnicodeNormalizationNFD() {
+    if (!extension_loaded('intl')) {
+      $this->markTestSkipped('intl extension not available');
+    }
+
+    $input = (new TextInput())
+      ->setUnicodeNormalization(UnicodeNormalization::NFD)
+      ->setTrim(null)
+      ->setNoControl(false);
+
+    // Composed: が (U+304C)
+    $composed = "\u{304C}";
+    // Decomposed: か (U+304B) + ゛ (U+3099)
+    $decomposed = "\u{304B}\u{3099}";
+
+    $input->setValue($composed);
+    $this->assertSame($decomposed, $input->getValue());
+  }
+
+  public function testUnicodeNormalizationNFKC() {
+    if (!extension_loaded('intl')) {
+      $this->markTestSkipped('intl extension not available');
+    }
+
+    $input = (new TextInput())
+      ->setUnicodeNormalization(UnicodeNormalization::NFKC)
+      ->setTrim(null)
+      ->setNoControl(false);
+
+    // Full-width digits (compatibility characters)
+    $fullWidth = "１２３";
+    // Half-width digits (canonical form)
+    $halfWidth = "123";
+
+    $input->setValue($fullWidth);
+    $this->assertSame($halfWidth, $input->getValue());
+  }
+
+  public function testUnicodeNormalizationNFKD() {
+    if (!extension_loaded('intl')) {
+      $this->markTestSkipped('intl extension not available');
+    }
+
+    $input = (new TextInput())
+      ->setUnicodeNormalization(UnicodeNormalization::NFKD)
+      ->setTrim(null)
+      ->setNoControl(false);
+
+    // Composed compatibility character: ㌀ (U+3300, SQUARE APAATO)
+    $compatibility = "\u{3300}";
+    // Decomposed: ア (U+30A2) + パ (U+30D1) + ー (U+30FC) + ト (U+30C8) decomposed further
+    // Note: NFKD also decomposes パ into ハ + combining dakuten
+
+    $input->setValue($compatibility);
+    $result = $input->getValue();
+
+    // Verify it's different from the original and uses decomposition
+    $this->assertNotSame($compatibility, $result);
+    $this->assertStringContainsString("\u{30A2}", $result); // ア
+  }
+
+  public function testUnicodeNormalizationDisabled() {
+    if (!extension_loaded('intl')) {
+      $this->markTestSkipped('intl extension not available');
+    }
+
+    $input = (new TextInput())
+      ->setUnicodeNormalization(null)
+      ->setTrim(null)
+      ->setNoControl(false);
+
+    // Decomposed form should stay decomposed
+    $decomposed = "\u{304B}\u{3099}";
+
+    $input->setValue($decomposed);
+    $this->assertSame($decomposed, $input->getValue());
+  }
+
+  public function testUnicodeNormalizationWithoutIntl() {
+    // This test verifies behavior when intl is not available
+    // We can't actually test this if intl IS available, so we'll skip
+    if (extension_loaded('intl')) {
+      $this->markTestSkipped('Cannot test non-intl behavior when intl is available');
+    }
+
+    $input = (new TextInput())
+      ->setUnicodeNormalization(UnicodeNormalization::NFC)
+      ->setTrim(null)
+      ->setNoControl(false);
+
+    $value = "\u{304B}\u{3099}";
+    $input->setValue($value);
+
+    // Should return original value unchanged (silent fallback)
+    $this->assertSame($value, $input->getValue());
+  }
+
+  public function testUnicodeNormalizationInvalidForm() {
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('Invalid normalization form');
+
+    $input = new TextInput();
+    $input->setUnicodeNormalization('INVALID');
+  }
+
+  public function testUnicodeNormalizationJapaneseDakuten() {
+    if (!extension_loaded('intl')) {
+      $this->markTestSkipped('intl extension not available');
+    }
+
+    $input = (new TextInput())
+      ->setUnicodeNormalization(UnicodeNormalization::NFC)
+      ->setTrim(null)
+      ->setNoControl(false);
+
+    // Various decomposed Japanese characters
+    $decomposed = "\u{304B}\u{3099}\u{304D}\u{3099}\u{304F}\u{3099}"; // か゛き゛く゛
+    $composed = "\u{304C}\u{304E}\u{3050}"; // がぎぐ
+
+    $input->setValue($decomposed);
+    $this->assertSame($composed, $input->getValue());
+  }
+
+  public function testUnicodeNormalizationOrderOfOperations() {
+    if (!extension_loaded('intl')) {
+      $this->markTestSkipped('intl extension not available');
+    }
+
+    // Unicode normalization should happen after scrubUtf8 but before mb_convert_kana
+    $input = (new TextInput())
+      ->setUnicodeNormalization(UnicodeNormalization::NFC)
+      ->setMb('KVC')  // Hiragana to Katakana
+      ->setTrim(null)
+      ->setNoControl(false);
+
+    // Decomposed hiragana が (ka + dakuten)
+    $decomposed = "\u{304B}\u{3099}";
+    // Should first normalize to NFC が, then convert to Katakana ガ
+    $expected = "\u{30AC}"; // ガ
+
+    $input->setValue($decomposed);
+    $this->assertSame($expected, $input->getValue());
   }
 
   public function testValidateTooLongError() {

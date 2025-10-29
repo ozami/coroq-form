@@ -5,6 +5,7 @@ namespace Coroq\Form\FormItem;
 use Coroq\Form\Error\Error;
 use Coroq\Form\Error\InvalidError;
 use Coroq\Form\Error\PatternMismatchError;
+use Coroq\Form\FormItem\UnicodeNormalization;
 
 /**
  * Text input with extensive filtering options (trim, case conversion, mb_convert_kana, etc.)
@@ -35,6 +36,8 @@ class TextInput extends Input implements HasLengthRangeInterface {
   protected $trim = self::BOTH;
   /** @var string|null */
   protected $pattern = null;
+  /** @var string|null */
+  protected $unicodeNormalization = UnicodeNormalization::NFC;
 
   /**
    * @param string|null $mb
@@ -122,12 +125,32 @@ class TextInput extends Input implements HasLengthRangeInterface {
   }
 
   /**
+   * @param string|null $form Unicode normalization form (NFC|NFD|NFKC|NFKD) or null to disable
+   * @return $this
+   */
+  public function setUnicodeNormalization(?string $form): self {
+    if ($form !== null && !in_array($form, [
+      UnicodeNormalization::NFC,
+      UnicodeNormalization::NFD,
+      UnicodeNormalization::NFKC,
+      UnicodeNormalization::NFKD
+    ])) {
+      throw new \InvalidArgumentException("Invalid normalization form: $form");
+    }
+    $this->unicodeNormalization = $form;
+    return $this;
+  }
+
+  /**
    * @param mixed $value
    * @return string
    */
   public function filter($value): string {
     $value = "$value";
     $value = $this->scrubUtf8($value);
+    if ($this->unicodeNormalization !== null) {
+      $value = $this->normalizeUnicode($value, $this->unicodeNormalization, false);
+    }
     if ($this->mb !== null) {
       $value = mb_convert_kana($value, $this->mb, "UTF-8");
     }

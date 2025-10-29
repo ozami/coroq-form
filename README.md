@@ -169,6 +169,7 @@ $form->validate();
 ```php
 use Coroq\Form\Form;
 use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\FormItem\UnicodeNormalization;
 
 class ProfileForm extends Form {
     public readonly TextInput $name;
@@ -190,6 +191,25 @@ class ProfileForm extends Form {
     }
 }
 ```
+
+**Unicode Normalization:**
+
+Text input values are normalized using NFC (Canonical Composition) by default if the `intl` extension is available. This ensures consistent character representation (e.g., Japanese combining marks: か゛ → が).
+
+```php
+use Coroq\Form\FormItem\UnicodeNormalization;
+
+// Default: NFC if intl available, otherwise no normalization
+$input = new TextInput();
+
+// Use different form (NFD, NFKC, NFKD)
+$input->setUnicodeNormalization(UnicodeNormalization::NFKC);
+
+// Disable normalization
+$input->setUnicodeNormalization(null);
+```
+
+For normalization form details, see [Normalizer class documentation](https://www.php.net/manual/en/class.normalizer.php).
 
 ### Email Input
 
@@ -1805,6 +1825,7 @@ $text->setPattern(string);               // Regex
 $text->setTrim(string);                  // LEFT, RIGHT, BOTH, null
 $text->setCase(int);                     // UPPER, LOWER, TITLE
 $text->setMb(string);                    // mb_convert_kana option
+$text->setUnicodeNormalization(string);  // NFC, NFD, NFKC, NFKD, null
 $text->setMultiline(bool);
 $text->setNoWhitespace(bool);
 $text->setNoControl(bool);
