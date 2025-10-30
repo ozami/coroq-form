@@ -42,7 +42,7 @@ class DateInput extends Input {
     if (!$this->isValidDate($value)) {
       return new InvalidDateError($this);
     }
-    return null;
+    return parent::doValidate($value);
   }
 
   /**

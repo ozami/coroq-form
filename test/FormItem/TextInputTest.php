@@ -596,4 +596,43 @@ class TextInputTest extends TestCase {
     $this->assertTrue($input->validate());
     $this->assertFalse($input->hasError());
   }
+
+  public function testValidatorIsCalledAfterDoValidate() {
+    $validatorCalled = false;
+    $input = (new TextInput())
+      ->setValue('test')
+      ->setValidator(function($formItem, $value) use (&$validatorCalled) {
+        $validatorCalled = true;
+        return null;
+      });
+
+    $this->assertTrue($input->validate());
+    $this->assertTrue($validatorCalled);
+  }
+
+  public function testValidatorCanReturnError() {
+    $input = (new TextInput())
+      ->setValue('test')
+      ->setValidator(function($formItem, $value) {
+        return new InvalidError($formItem);
+      });
+
+    $this->assertFalse($input->validate());
+    $this->assertInstanceOf(InvalidError::class, $input->getError());
+  }
+
+  public function testValidatorNotCalledWhenPatternMismatch() {
+    $validatorCalled = false;
+    $input = (new TextInput())
+      ->setPattern('/^[0-9]+$/')
+      ->setValue('abc')
+      ->setValidator(function($formItem, $value) use (&$validatorCalled) {
+        $validatorCalled = true;
+        return null;
+      });
+
+    $this->assertFalse($input->validate());
+    $this->assertInstanceOf(PatternMismatchError::class, $input->getError());
+    $this->assertFalse($validatorCalled);
+  }
 }

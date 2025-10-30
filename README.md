@@ -534,6 +534,144 @@ if ($form->validate()) {
 // Resubmission after error: newAvatar is empty, avatarId still has value
 ```
 
+## Custom Validators
+
+All Input subclasses support custom validators via `setValidator()`. This allows you to add validation logic without creating custom subclasses.
+
+### Basic Example
+
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\Error\InvalidError;
+
+class RegistrationForm extends Form {
+    public readonly TextInput $username;
+
+    public function __construct() {
+        $this->username = (new TextInput())
+            ->setMinLength(3)
+            ->setValidator(function($formItem, $value) {
+                // Additional validation: no special characters
+                if (preg_match('/[^a-z0-9_]/', $value)) {
+                    return new InvalidError($formItem);
+                }
+                return null;
+            });
+    }
+}
+```
+
+### How It Works
+
+The validator:
+- Receives two parameters: `$formItem` (the input itself) and `$value` (the filtered value)
+- Runs **after** the input's built-in validation (`doValidate()`) passes
+- Returns an `Error` object if validation fails, or `null` if valid
+- Does **not** run if the value is empty or if built-in validation fails
+
+```php
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\Error\InvalidError;
+
+$email = (new EmailInput())
+    ->setValidator(function($formItem, $value) {
+        // Block disposable email domains
+        if (str_ends_with($value, '@tempmail.com')) {
+            return new InvalidError($formItem);
+        }
+        return null;
+    });
+
+$email->setValue('user@tempmail.com');
+$email->validate(); // Fails - custom validator returns error
+
+$email->setValue('invalid-email');
+$email->validate(); // Fails - built-in email validation fails first
+                   // Custom validator never runs
+```
+
+### Advanced Examples
+
+**Accessing form item properties:**
+
+```php
+use Coroq\Form\FormItem\IntegerInput;
+use Coroq\Form\Error\InvalidError;
+
+$quantity = (new IntegerInput())
+    ->setMin(1)
+    ->setMax(100)
+    ->setValidator(function($formItem, $value) {
+        // Reject quantities not divisible by 5
+        if ((int)$value % 5 !== 0) {
+            return new InvalidError($formItem);
+        }
+        return null;
+    });
+```
+
+**Business logic validation:**
+
+```php
+use Coroq\Form\FormItem\DateInput;
+use Coroq\Form\Error\InvalidError;
+
+$eventDate = (new DateInput())
+    ->setValidator(function($formItem, $value) {
+        $date = new DateTime($value);
+        $today = new DateTime('today');
+
+        // Must be in the future
+        if ($date <= $today) {
+            return new InvalidError($formItem);
+        }
+
+        // No events on Sundays
+        if ($date->format('w') === '0') {
+            return new InvalidError($formItem);
+        }
+
+        return null;
+    });
+```
+
+**Custom error types:**
+
+```php
+use Coroq\Form\Error\Error;
+use Coroq\Form\FormItem\FormItemInterface;
+
+// Define custom error
+class WeakPasswordError extends Error {}
+
+// Use in validator
+$password = (new TextInput())
+    ->setMinLength(8)
+    ->setValidator(function($formItem, $value) {
+        // Require uppercase, lowercase, and number
+        if (!preg_match('/[A-Z]/', $value) ||
+            !preg_match('/[a-z]/', $value) ||
+            !preg_match('/[0-9]/', $value)) {
+            return new WeakPasswordError($formItem);
+        }
+        return null;
+    });
+```
+
+### When to Use
+
+**Use `setValidator()` for:**
+- One-off validation in specific forms
+- Prototyping before creating proper subclasses
+- Simple regex or format checks
+- Business logic that varies by context
+
+**Use subclasses for:**
+- Reusable validation across multiple forms
+- Complex validation logic
+- Validation that should be documented in API
+
 ## Nested Forms
 
 ```php
@@ -1643,103 +1781,6 @@ if ($form->validate()) {
 }
 ```
 
-## Capability Detection Interfaces
-
-Interfaces for detecting form item capabilities:
-
-### HasLengthRangeInterface
-
-Implemented by inputs with string length constraints (e.g., `TextInput`).
-
-```php
-use Coroq\Form\FormItem\HasLengthRangeInterface;
-
-if ($input instanceof HasLengthRangeInterface) {
-    $maxLength = $input->getMaxLength();
-    $minLength = $input->getMinLength();
-    // Generate <input maxlength="...">
-}
-```
-
-### HasNumericRangeInterface
-
-Implemented by inputs with numeric range constraints (e.g., `IntegerInput`, `NumberInput`).
-
-```php
-use Coroq\Form\FormItem\HasNumericRangeInterface;
-
-if ($input instanceof HasNumericRangeInterface) {
-    $min = $input->getMin();
-    $max = $input->getMax();
-    // Generate <input type="number" min="..." max="...">
-}
-```
-
-### HasOptionsInterface
-
-Implemented by inputs with predefined options (e.g., `Select`, `MultiSelect`).
-
-```php
-use Coroq\Form\FormItem\HasOptionsInterface;
-
-if ($input instanceof HasOptionsInterface) {
-    $options = $input->getOptions();  // ['value' => 'label', ...]
-    // Generate <select> with <option> elements
-}
-```
-
-### HasCountRangeInterface
-
-Implemented by inputs with selection count constraints (e.g., `MultiSelect`).
-
-```php
-use Coroq\Form\FormItem\HasCountRangeInterface;
-
-if ($input instanceof HasCountRangeInterface) {
-    $minCount = $input->getMinCount();
-    $maxCount = $input->getMaxCount();
-    // Validate or display "Select 1-3 items"
-}
-```
-
-### Example: HTML Generator
-
-```php
-use Coroq\Form\FormItem\HasLengthRangeInterface;
-use Coroq\Form\FormItem\HasNumericRangeInterface;
-use Coroq\Form\FormItem\HasOptionsInterface;
-
-function generateHtmlInput(FormItemInterface $input, string $name): string {
-    $html = "<input type=\"text\" name=\"$name\"";
-
-    // Add length constraints
-    if ($input instanceof HasLengthRangeInterface) {
-        if ($input->getMaxLength() < PHP_INT_MAX) {
-            $html .= " maxlength=\"{$input->getMaxLength()}\"";
-        }
-    }
-
-    // Add numeric constraints
-    if ($input instanceof HasNumericRangeInterface) {
-        $html .= " type=\"number\"";
-        $html .= " min=\"{$input->getMin()}\"";
-        $html .= " max=\"{$input->getMax()}\"";
-    }
-
-    // Generate select
-    if ($input instanceof HasOptionsInterface) {
-        $html = "<select name=\"$name\">";
-        foreach ($input->getOptions() as $value => $label) {
-            $html .= "<option value=\"$value\">$label</option>";
-        }
-        $html .= "</select>";
-    }
-
-    $html .= ">";
-    return $html;
-}
-```
-
 ## API Reference
 
 ### Form
@@ -1805,6 +1846,9 @@ $input->setRequired(bool);
 $input->setReadOnly(bool);
 $input->setDisabled(bool);
 $input->setLabel(string);
+
+// Custom validation
+$input->setValidator(?callable);         // fn($formItem, $value): ?Error
 
 // Checks
 $isEmpty = $input->isEmpty();

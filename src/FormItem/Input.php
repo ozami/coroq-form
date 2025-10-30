@@ -14,6 +14,9 @@ class Input extends AbstractFormItem {
   /** @var mixed The current value */
   private $value = "";
 
+  /** @var \Closure|null Validator closure */
+  protected ?\Closure $validator = null;
+
   public function __construct() {
   }
 
@@ -61,26 +64,55 @@ class Input extends AbstractFormItem {
   }
 
   /**
+   * Set validator for additional validation logic
+   *
+   * The validator runs after doValidate() succeeds and can return any Error type.
+   * This provides flexibility for one-off validation without creating subclasses.
+   *
+   * For reusable validation logic, consider creating a proper subclass instead.
+   *
+   * @param callable|null $validator Function signature: fn(FormItemInterface $formItem, mixed $value): ?Error
+   * @return self
+   */
+  public function setValidator(?callable $validator): self {
+    $this->validator = $validator;
+    return $this;
+  }
+
+  /**
    * Validate the value
    *
    * Checks required constraint first, then calls doValidate() if not empty.
+   * If doValidate() succeeds and a validator is set, the validator is called.
    *
    * @return bool True if valid, false if validation failed
    */
   public function validate(): bool {
     $this->setError(null);
+
     if ($this->isEmpty()) {
       if ($this->isRequired()) {
         $this->setError(new EmptyError($this));
+        return false;
       }
+      return true;
     }
-    else {
-      $error = $this->doValidate($this->getValue());
+
+    $error = $this->doValidate($this->getValue());
+    if ($error) {
+      $this->setError($error);
+      return false;
+    }
+
+    if ($this->validator !== null) {
+      $error = ($this->validator)($this, $this->getValue());
       if ($error) {
         $this->setError($error);
+        return false;
       }
     }
-    return !$this->getError();
+
+    return true;
   }
 
   /**

@@ -1,6 +1,7 @@
 <?php
 use Coroq\Form\FormItem\DateInput;
 use Coroq\Form\Error\InvalidDateError;
+use Coroq\Form\Error\InvalidError;
 use PHPUnit\Framework\TestCase;
 
 class DateInputTest extends TestCase {
@@ -305,5 +306,43 @@ class DateInputTest extends TestCase {
     } finally {
       date_default_timezone_set($originalTz);
     }
+  }
+
+  public function testValidatorIsCalledAfterDoValidate() {
+    $validatorCalled = false;
+    $input = (new DateInput())
+      ->setValue('2024-01-15')
+      ->setValidator(function($formItem, $value) use (&$validatorCalled) {
+        $validatorCalled = true;
+        return null;
+      });
+
+    $this->assertTrue($input->validate());
+    $this->assertTrue($validatorCalled);
+  }
+
+  public function testValidatorCanReturnError() {
+    $input = (new DateInput())
+      ->setValue('2024-01-15')
+      ->setValidator(function($formItem, $value) {
+        return new InvalidError($formItem);
+      });
+
+    $this->assertFalse($input->validate());
+    $this->assertInstanceOf(InvalidError::class, $input->getError());
+  }
+
+  public function testValidatorNotCalledWhenDateInvalid() {
+    $validatorCalled = false;
+    $input = (new DateInput())
+      ->setValue('invalid-date')
+      ->setValidator(function($formItem, $value) use (&$validatorCalled) {
+        $validatorCalled = true;
+        return null;
+      });
+
+    $this->assertFalse($input->validate());
+    $this->assertInstanceOf(InvalidDateError::class, $input->getError());
+    $this->assertFalse($validatorCalled);
   }
 }

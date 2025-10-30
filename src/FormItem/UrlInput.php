@@ -47,7 +47,7 @@ class UrlInput extends Input {
     if (!$this->isValidUrl($value)) {
       return new InvalidUrlError($this);
     }
-    return null;
+    return parent::doValidate($value);
   }
 
   /**

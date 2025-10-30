@@ -116,6 +116,6 @@ class FileInput extends Input {
       }
     }
 
-    return null;
+    return parent::doValidate($value);
   }
 }

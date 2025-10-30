@@ -3,6 +3,7 @@ use Coroq\Form\FormItem\NumberInput;
 use Coroq\Form\Error\NotNumericError;
 use Coroq\Form\Error\TooSmallError;
 use Coroq\Form\Error\TooLargeError;
+use Coroq\Form\Error\InvalidError;
 use PHPUnit\Framework\TestCase;
 
 class NumberInputTest extends TestCase {
@@ -69,5 +70,43 @@ class NumberInputTest extends TestCase {
     // Should not crash - invalid bytes replaced with �
     $value = $input->getValue();
     $this->assertTrue(mb_check_encoding($value, 'UTF-8'));
+  }
+
+  public function testValidatorIsCalledAfterDoValidate() {
+    $validatorCalled = false;
+    $input = (new NumberInput())
+      ->setValue('3.14')
+      ->setValidator(function($formItem, $value) use (&$validatorCalled) {
+        $validatorCalled = true;
+        return null;
+      });
+
+    $this->assertTrue($input->validate());
+    $this->assertTrue($validatorCalled);
+  }
+
+  public function testValidatorCanReturnError() {
+    $input = (new NumberInput())
+      ->setValue('3.14')
+      ->setValidator(function($formItem, $value) {
+        return new InvalidError($formItem);
+      });
+
+    $this->assertFalse($input->validate());
+    $this->assertInstanceOf(InvalidError::class, $input->getError());
+  }
+
+  public function testValidatorNotCalledWhenNumberInvalid() {
+    $validatorCalled = false;
+    $input = (new NumberInput())
+      ->setValue('not-a-number')
+      ->setValidator(function($formItem, $value) use (&$validatorCalled) {
+        $validatorCalled = true;
+        return null;
+      });
+
+    $this->assertFalse($input->validate());
+    $this->assertInstanceOf(NotNumericError::class, $input->getError());
+    $this->assertFalse($validatorCalled);
   }
 }

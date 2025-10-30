@@ -43,6 +43,10 @@ class Select extends Input implements HasOptionsInterface {
    * @return Error|null
    */
   public function doValidate($value): ?Error {
-    return $this->validateInOptions($value);
+    $optionError = $this->validateInOptions($value);
+    if ($optionError !== null) {
+      return $optionError;
+    }
+    return parent::doValidate($value);
   }
 }

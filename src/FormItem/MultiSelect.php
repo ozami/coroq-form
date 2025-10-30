@@ -61,6 +61,10 @@ class MultiSelect extends Input implements HasOptionsInterface, HasCountRangeInt
         return $optionError;
       }
     }
-    return $this->validateCount(count($value));
+    $countError = $this->validateCount(count($value));
+    if ($countError !== null) {
+      return $countError;
+    }
+    return parent::doValidate($value);
   }
 }

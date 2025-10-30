@@ -3,6 +3,7 @@ use Coroq\Form\FormItem\MultiSelect;
 use Coroq\Form\Error\NotInOptionsError;
 use Coroq\Form\Error\TooFewSelectionsError;
 use Coroq\Form\Error\TooManySelectionsError;
+use Coroq\Form\Error\InvalidError;
 use PHPUnit\Framework\TestCase;
 
 class MultiSelectTest extends TestCase {
@@ -362,5 +363,46 @@ class MultiSelectTest extends TestCase {
     $json = json_encode($value);
     // Should encode as JSON array, not object
     $this->assertSame('["a","c"]', $json);
+  }
+
+  public function testValidatorIsCalledAfterDoValidate() {
+    $validatorCalled = false;
+    $input = (new MultiSelect())
+      ->setOptions(['a' => 'Option A', 'b' => 'Option B', 'c' => 'Option C'])
+      ->setValue(['a', 'b'])
+      ->setValidator(function($formItem, $value) use (&$validatorCalled) {
+        $validatorCalled = true;
+        return null;
+      });
+
+    $this->assertTrue($input->validate());
+    $this->assertTrue($validatorCalled);
+  }
+
+  public function testValidatorCanReturnError() {
+    $input = (new MultiSelect())
+      ->setOptions(['a' => 'Option A', 'b' => 'Option B'])
+      ->setValue(['a'])
+      ->setValidator(function($formItem, $value) {
+        return new InvalidError($formItem);
+      });
+
+    $this->assertFalse($input->validate());
+    $this->assertInstanceOf(InvalidError::class, $input->getError());
+  }
+
+  public function testValidatorNotCalledWhenNotInOptions() {
+    $validatorCalled = false;
+    $input = (new MultiSelect())
+      ->setOptions(['a' => 'Option A', 'b' => 'Option B'])
+      ->setValue(['c'])
+      ->setValidator(function($formItem, $value) use (&$validatorCalled) {
+        $validatorCalled = true;
+        return null;
+      });
+
+    $this->assertFalse($input->validate());
+    $this->assertInstanceOf(NotInOptionsError::class, $input->getError());
+    $this->assertFalse($validatorCalled);
   }
 }

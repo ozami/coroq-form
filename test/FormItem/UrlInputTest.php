@@ -1,6 +1,7 @@
 <?php
 use Coroq\Form\FormItem\UrlInput;
 use Coroq\Form\Error\InvalidUrlError;
+use Coroq\Form\Error\InvalidError;
 use PHPUnit\Framework\TestCase;
 
 class UrlInputTest extends TestCase {
@@ -155,5 +156,43 @@ class UrlInputTest extends TestCase {
     // International domains must be converted to Punycode (e.g., xn--wgv71a.jp) to pass validation
     $this->assertFalse($input->validate());
     $this->assertInstanceOf(InvalidUrlError::class, $input->getError());
+  }
+
+  public function testValidatorIsCalledAfterDoValidate() {
+    $validatorCalled = false;
+    $input = (new UrlInput())
+      ->setValue('https://example.com')
+      ->setValidator(function($formItem, $value) use (&$validatorCalled) {
+        $validatorCalled = true;
+        return null;
+      });
+
+    $this->assertTrue($input->validate());
+    $this->assertTrue($validatorCalled);
+  }
+
+  public function testValidatorCanReturnError() {
+    $input = (new UrlInput())
+      ->setValue('https://example.com')
+      ->setValidator(function($formItem, $value) {
+        return new InvalidError($formItem);
+      });
+
+    $this->assertFalse($input->validate());
+    $this->assertInstanceOf(InvalidError::class, $input->getError());
+  }
+
+  public function testValidatorNotCalledWhenUrlInvalid() {
+    $validatorCalled = false;
+    $input = (new UrlInput())
+      ->setValue('not-a-url')
+      ->setValidator(function($formItem, $value) use (&$validatorCalled) {
+        $validatorCalled = true;
+        return null;
+      });
+
+    $this->assertFalse($input->validate());
+    $this->assertInstanceOf(InvalidUrlError::class, $input->getError());
+    $this->assertFalse($validatorCalled);
   }
 }

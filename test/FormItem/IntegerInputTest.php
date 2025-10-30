@@ -3,6 +3,7 @@ use Coroq\Form\FormItem\IntegerInput;
 use Coroq\Form\Error\NotIntegerError;
 use Coroq\Form\Error\TooSmallError;
 use Coroq\Form\Error\TooLargeError;
+use Coroq\Form\Error\InvalidError;
 use PHPUnit\Framework\TestCase;
 
 class IntegerInputTest extends TestCase {
@@ -249,5 +250,43 @@ class IntegerInputTest extends TestCase {
     // Out of range (even though validation would fail, getInteger handles it)
     $input->setValue(bcadd((string)PHP_INT_MAX, '1'));
     $this->assertNull($input->getInteger());
+  }
+
+  public function testValidatorIsCalledAfterDoValidate() {
+    $validatorCalled = false;
+    $input = (new IntegerInput())
+      ->setValue('42')
+      ->setValidator(function($formItem, $value) use (&$validatorCalled) {
+        $validatorCalled = true;
+        return null;
+      });
+
+    $this->assertTrue($input->validate());
+    $this->assertTrue($validatorCalled);
+  }
+
+  public function testValidatorCanReturnError() {
+    $input = (new IntegerInput())
+      ->setValue('42')
+      ->setValidator(function($formItem, $value) {
+        return new InvalidError($formItem);
+      });
+
+    $this->assertFalse($input->validate());
+    $this->assertInstanceOf(InvalidError::class, $input->getError());
+  }
+
+  public function testValidatorNotCalledWhenIntegerInvalid() {
+    $validatorCalled = false;
+    $input = (new IntegerInput())
+      ->setValue('not-a-number')
+      ->setValidator(function($formItem, $value) use (&$validatorCalled) {
+        $validatorCalled = true;
+        return null;
+      });
+
+    $this->assertFalse($input->validate());
+    $this->assertInstanceOf(NotIntegerError::class, $input->getError());
+    $this->assertFalse($validatorCalled);
   }
 }

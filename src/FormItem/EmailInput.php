@@ -59,7 +59,7 @@ class EmailInput extends Input {
     if (!$this->isValidEmail($value)) {
       return new InvalidEmailError($this);
     }
-    return null;
+    return parent::doValidate($value);
   }
 
   /**

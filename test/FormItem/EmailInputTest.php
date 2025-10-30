@@ -1,6 +1,7 @@
 <?php
 use Coroq\Form\FormItem\EmailInput;
 use Coroq\Form\Error\InvalidEmailError;
+use Coroq\Form\Error\InvalidError;
 use PHPUnit\Framework\TestCase;
 
 class EmailInputTest extends TestCase {
@@ -266,5 +267,43 @@ class EmailInputTest extends TestCase {
     $value = $input->getValue();
     $this->assertTrue(mb_check_encoding($value, 'UTF-8'));
     $this->assertStringContainsString("\u{FFFD}", $value);
+  }
+
+  public function testValidatorIsCalledAfterDoValidate() {
+    $validatorCalled = false;
+    $input = (new EmailInput())
+      ->setValue('test@example.com')
+      ->setValidator(function($formItem, $value) use (&$validatorCalled) {
+        $validatorCalled = true;
+        return null;
+      });
+
+    $this->assertTrue($input->validate());
+    $this->assertTrue($validatorCalled);
+  }
+
+  public function testValidatorCanReturnError() {
+    $input = (new EmailInput())
+      ->setValue('test@example.com')
+      ->setValidator(function($formItem, $value) {
+        return new InvalidError($formItem);
+      });
+
+    $this->assertFalse($input->validate());
+    $this->assertInstanceOf(InvalidError::class, $input->getError());
+  }
+
+  public function testValidatorNotCalledWhenEmailInvalid() {
+    $validatorCalled = false;
+    $input = (new EmailInput())
+      ->setValue('invalid-email')
+      ->setValidator(function($formItem, $value) use (&$validatorCalled) {
+        $validatorCalled = true;
+        return null;
+      });
+
+    $this->assertFalse($input->validate());
+    $this->assertInstanceOf(InvalidEmailError::class, $input->getError());
+    $this->assertFalse($validatorCalled);
   }
 }

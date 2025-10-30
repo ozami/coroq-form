@@ -193,6 +193,6 @@ class TextInput extends Input implements HasLengthRangeInterface {
     if (isset($this->pattern) && !preg_match($this->pattern, $value)) {
       return new PatternMismatchError($this);
     }
-    return null;
+    return parent::doValidate($value);
   }
 }
