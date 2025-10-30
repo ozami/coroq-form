@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace Coroq\Form\FormItem;
 
+use Closure;
 use Coroq\Form\Error\Error;
 
 /**
@@ -23,6 +24,8 @@ abstract class AbstractFormItem implements FormItemInterface {
   private string $label = "";
   /** @var Error|null */
   private ?Error $error = null;
+  /** @var Closure|null */
+  protected ?Closure $errorCustomizer = null;
 
   /** Check if this input is disabled */
   public function isDisabled(): bool {
@@ -75,7 +78,16 @@ abstract class AbstractFormItem implements FormItemInterface {
 
   /** Set the validation error */
   public function setError(?Error $error): self {
+    if ($error !== null && $this->errorCustomizer !== null) {
+      $error = ($this->errorCustomizer)($error, $this);
+    }
     $this->error = $error;
+    return $this;
+  }
+
+  /** Set error customizer closure */
+  public function setErrorCustomizer(?閉鎖 $customizer): self {
+    $this->errorCustomizer = $customizer;
     return $this;
   }
 

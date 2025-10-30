@@ -507,11 +507,39 @@ if ($form->hasError()) {
 }
 ```
 
-## Error Messages
+## Error Handling
+
+### Error Customizer
+
+Transform error objects before they are stored. Useful for converting generic errors to field-specific error types.
+
+```php
+use Coroq\Form\FormItem\BooleanInput;
+use Coroq\Form\Error\Error;
+use Coroq\Form\Error\EmptyError;
+
+class NoAgreementError extends Error {}
+
+$agree = (new BooleanInput())
+    ->setRequired(true)
+    ->setErrorCustomizer(function(Error $error, $formItem): Error {
+        if ($error instanceof EmptyError) {
+            return new NoAgreementError($formItem);
+        }
+        return $error;
+    });
+
+$agree->validate();
+echo get_class($agree->getError()); // "NoAgreementError"
+```
+
+The customizer receives `$error` and `$formItem`, runs after validation, and returns the transformed error. You can replace the error object or mutate it by adding properties.
+
+### Error Messages
 
 Use `ErrorMessageFormatter` to convert error objects to human-readable messages. You define your own message set by mapping error class names to messages (strings or closures).
 
-### Basic Usage
+#### Basic Usage
 
 ```php
 use Coroq\Form\ErrorMessageFormatter;
@@ -1666,8 +1694,9 @@ $input->setReadOnly(bool);
 $input->setDisabled(bool);
 $input->setLabel(string);
 
-// Custom validation
+// Custom validation and error handling
 $input->setValidator(?callable);         // fn($formItem, $value): ?Error
+$input->setErrorCustomizer(?\Closure);   // fn($error, $formItem): Error
 
 // Checks
 $isEmpty = $input->isEmpty();
