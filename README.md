@@ -39,28 +39,6 @@ This is a **validation and data processing layer** that sits between your HTTP l
 composer require coroq/form
 ```
 
-## Configuration
-
-### UTF-8 Invalid Character Handling
-
-This library assumes all input is UTF-8 encoded. Invalid UTF-8 byte sequences are automatically replaced with a substitute character during filtering.
-
-By default, PHP uses `?` (U+003F QUESTION MARK) as the substitute character. For better visibility of data corruption, it's recommended to use `�` (U+FFFD REPLACEMENT CHARACTER) instead by configuring it in your application bootstrap:
-
-```php
-// Recommended: Use Unicode Replacement Character for invalid UTF-8 bytes
-mb_substitute_character(0xFFFD);  // U+FFFD: �
-```
-
-Alternative configurations:
-```php
-mb_substitute_character('none');   // Remove invalid bytes silently
-mb_substitute_character('long');   // Use U+XXXX notation
-mb_substitute_character('entity'); // Use &#XXXX; HTML entities
-```
-
-See [mb_substitute_character documentation](https://www.php.net/manual/en/function.mb-substitute-character.php) for more options.
-
 ## Quick Start
 
 ```php
@@ -174,6 +152,605 @@ $form->name = new TextInput();
 $form->setValue($_POST);
 $form->validate();
 ```
+
+## Form State
+
+Form items have three state flags that control their behavior:
+
+### Required/Optional
+
+**Input level:**
+- `setRequired(true)` (default) - Empty value fails validation with EmptyError
+- `setRequired(false)` - Empty value passes validation
+
+**Form level:**
+- `setRequired(true)` (default) - Validates all enabled items even if form is empty
+- `setRequired(false)` - If the entire form is empty, validation passes without checking items
+
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
+class ProfileForm extends Form {
+    public readonly TextInput $name;
+    public readonly TextInput $nickname;
+
+    public function __construct() {
+        $this->name = new TextInput();  // Required (default)
+        $this->nickname = (new TextInput())
+            ->setRequired(false);  // Optional
+    }
+}
+
+$form = new ProfileForm();
+$form->setValue(['name' => '', 'nickname' => '']);
+$form->validate();
+// name has EmptyError, nickname passes validation
+```
+
+**Form-level example:**
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
+class AddressForm extends Form {
+    public readonly TextInput $street;
+    public readonly TextInput $city;
+
+    public function __construct() {
+        $this->street = new TextInput();
+        $this->city = new TextInput();
+        $this->setRequired(false);  // Make entire form optional
+    }
+}
+
+$form = new AddressForm();
+$form->setValue(['street' => '', 'city' => '']);
+$form->validate();  // Passes! Empty optional form skips item validation
+```
+
+### Read-Only
+
+**Input level:**
+- `setValue()` is ignored (value doesn't change)
+- Item is included in `getValue()` and `validate()`
+
+**Form level:**
+- `setValue()` is ignored for the entire form
+- Items are included in `getValue()` and `validate()`
+
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
+class UserForm extends Form {
+    public readonly TextInput $id;
+    public readonly TextInput $name;
+
+    public function __construct() {
+        $this->id = (new TextInput())
+            ->setValue('12345')
+            ->setReadOnly(true);
+        $this->name = new TextInput();
+    }
+}
+
+$form = new UserForm();
+$form->setValue(['id' => '99999', 'name' => 'Taro']);
+
+echo $form->id->getValue();    // "12345" (unchanged)
+echo $form->name->getValue();  // "Taro"
+$form->validate();             // Both items are validated
+```
+
+**Form-level example:**
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
+class DisplayForm extends Form {
+    public readonly TextInput $field;
+
+    public function __construct() {
+        $this->field = (new TextInput())->setValue('fixed');
+        $this->setReadOnly(true);  // Entire form is read-only
+    }
+}
+
+$form = new DisplayForm();
+$form->setValue(['field' => 'new value']);  // Ignored!
+echo $form->field->getValue();  // "fixed"
+```
+
+### Disabled
+
+**Input level:**
+- Excluded from `getValue()` - not in returned array
+- Excluded from `setValue()` - value is not set
+- Excluded from `validate()` - not validated
+
+**Form level:**
+- Excluded from parent form's `getValue()`, `setValue()`, and `validate()`
+- Useful for conditionally hiding entire form sections
+
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
+class OrderForm extends Form {
+    public readonly TextInput $customerName;
+    public readonly TextInput $legacyField;
+
+    public function __construct() {
+        $this->customerName = new TextInput();
+        $this->legacyField = (new TextInput())
+            ->setDisabled(true);
+    }
+}
+
+$form = new OrderForm();
+$form->setValue([
+    'customerName' => 'Taro',
+    'legacyField' => 'ignored'
+]);
+
+$values = $form->getValue();
+// ['customerName' => 'Taro']
+// legacyField is completely ignored
+```
+
+**Form-level example:**
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
+class CheckoutForm extends Form {
+    public readonly TextInput $name;
+    public readonly AddressForm $billing;
+    public readonly AddressForm $shipping;
+
+    public function __construct() {
+        $this->name = new TextInput();
+        $this->billing = new AddressForm();
+        $this->shipping = new AddressForm();
+    }
+
+    public function disableShipping() {
+        $this->shipping->setDisabled(true);
+        return $this;
+    }
+}
+
+$form = new CheckoutForm();
+$form->disableShipping();
+
+$form->setValue([
+    'name' => 'Taro',
+    'billing' => ['street' => '1-1-1', 'city' => 'Tokyo'],
+    'shipping' => ['street' => '2-2-2', 'city' => 'Osaka']  // Ignored!
+]);
+
+$values = $form->getValue();
+// ['name' => 'Taro', 'billing' => ['street' => '1-1-1', 'city' => 'Tokyo']]
+// shipping is completely excluded
+```
+
+### State Summary
+
+| State | setValue() | getValue() | validate() |
+|-------|------------|------------|------------|
+| Normal (required=true) | ✓ Sets value | ✓ Included | ✓ Validated, must not be empty |
+| Optional (required=false) | ✓ Sets value | ✓ Included | ✓ Validated, empty allowed |
+| Read-only | ✗ Ignored | ✓ Included | ✓ Validated |
+| Disabled | ✗ Ignored | ✗ Excluded | ✗ Skipped |
+
+**Form-level states apply to the form as a whole:**
+- Required=false on Form: Empty form passes validation
+- ReadOnly on Form: setValue() ignored for entire form
+- Disabled on Form: Entire form excluded from parent's getValue/setValue/validate
+
+## Validation
+
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\IntegerInput;
+
+class LoginForm extends Form {
+    public readonly EmailInput $email;
+    public readonly IntegerInput $age;
+
+    public function __construct() {
+        $this->email = new EmailInput();
+        $this->age = (new IntegerInput())->setMin(18);
+    }
+}
+
+$form = new LoginForm();
+$form->setValue([
+    'email' => 'invalid-email',
+    'age' => '15'
+]);
+
+if ($form->validate()) {
+    // All valid
+} else {
+    // Check individual fields
+    if ($form->email->hasError()) {
+        $error = $form->email->getError();
+        echo get_class($error); // "Coroq\Form\Error\InvalidEmailError"
+    }
+
+    if ($form->age->hasError()) {
+        $error = $form->age->getError();
+        echo get_class($error); // "Coroq\Form\Error\TooSmallError"
+    }
+
+    // Get all errors at once
+    $errors = $form->getError();
+    // ['email' => InvalidEmailError, 'age' => TooSmallError]
+}
+```
+
+### Custom Validators
+
+All Input subclasses support custom validators via `setValidator()`. This allows you to add validation logic without creating custom subclasses.
+
+#### Basic Example
+
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\Error\InvalidError;
+
+class RegistrationForm extends Form {
+    public readonly TextInput $username;
+
+    public function __construct() {
+        $this->username = (new TextInput())
+            ->setMinLength(3)
+            ->setValidator(function($formItem, $value) {
+                // Additional validation: no special characters
+                if (preg_match('/[^a-z0-9_]/', $value)) {
+                    return new InvalidError($formItem);
+                }
+                return null;
+            });
+    }
+}
+```
+
+#### How It Works
+
+The validator:
+- Receives two parameters: `$formItem` (the input itself) and `$value` (the filtered value)
+- Runs **after** the input's built-in validation (`doValidate()`) passes
+- Returns an `Error` object if validation fails, or `null` if valid
+- Does **not** run if the value is empty or if built-in validation fails
+
+```php
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\Error\InvalidError;
+
+$email = (new EmailInput())
+    ->setValidator(function($formItem, $value) {
+        // Block disposable email domains
+        if (str_ends_with($value, '@tempmail.com')) {
+            return new InvalidError($formItem);
+        }
+        return null;
+    });
+
+$email->setValue('user@tempmail.com');
+$email->validate(); // Fails - custom validator returns error
+
+$email->setValue('invalid-email');
+$email->validate(); // Fails - built-in email validation fails first
+                   // Custom validator never runs
+```
+
+#### Advanced Examples
+
+**Accessing form item properties:**
+
+```php
+use Coroq\Form\FormItem\IntegerInput;
+use Coroq\Form\Error\InvalidError;
+
+$quantity = (new IntegerInput())
+    ->setMin(1)
+    ->setMax(100)
+    ->setValidator(function($formItem, $value) {
+        // Reject quantities not divisible by 5
+        if ((int)$value % 5 !== 0) {
+            return new InvalidError($formItem);
+        }
+        return null;
+    });
+```
+
+### External Validation
+
+When you validate a value in external logic (authentication, API calls, business rules) but want to hold the error in the form, use `setError()` on a form item. The form item can be used only for holding the error.
+
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\FormItem\Input;
+use Coroq\Form\Error\InvalidError;
+
+class LoginForm extends Form {
+    public readonly EmailInput $email;
+    public readonly TextInput $password;
+    public readonly Input $authResult;
+
+    public function __construct() {
+        $this->email = new EmailInput();
+        $this->password = new TextInput();
+        $this->authResult = (new Input())->setReadOnly(true);
+    }
+}
+
+$form = new LoginForm();
+$form->setValue($_POST);
+
+if ($form->validate()) {
+    // External validation
+    if (!$authService->authenticate($form->email->getValue(), $form->password->getValue())) {
+        $form->authResult->setError(new InvalidError($form->authResult));
+    }
+}
+
+if ($form->hasError()) {
+    // Handle all errors uniformly
+}
+```
+
+## Error Messages
+
+Use `ErrorMessageFormatter` to convert error objects to human-readable messages. You define your own message set by mapping error class names to messages (strings or closures).
+
+### Basic Usage
+
+```php
+use Coroq\Form\ErrorMessageFormatter;
+use Coroq\Form\Error\EmptyError;
+use Coroq\Form\Error\InvalidError;
+use Coroq\Form\Error\TooLongError;
+use Coroq\Form\Error\TooSmallError;
+
+// Define your message set
+$messages = [
+    EmptyError::class => 'This field is required',
+    InvalidError::class => 'Invalid value',  // Catch-all for all Invalid* errors
+    TooSmallError::class => 'Value is too small',
+    TooLongError::class => 'Text is too long',
+];
+
+$formatter = new ErrorMessageFormatter();
+$formatter->setMessages($messages);
+
+// Format errors
+$form->validate();
+if ($form->email->hasError()) {
+    echo $formatter->format($form->email->getError());
+    // "Invalid value" (InvalidEmailError extends InvalidError)
+}
+```
+
+### Error Hierarchy and Inheritance
+
+The formatter uses `instanceof` matching, supporting error class inheritance. Many specific errors extend base error types. For example, `InvalidEmailError`, `InvalidUrlError`, `InvalidDateError`, `InvalidMimeTypeError`, and `InvalidExtensionError` all extend `InvalidError`.
+
+**Define base messages as defaults, then override specific types as needed:**
+
+```php
+use Coroq\Form\ErrorMessageFormatter;
+use Coroq\Form\Error\InvalidError;
+use Coroq\Form\Error\InvalidEmailError;
+
+$messages = [
+    InvalidError::class => 'Invalid value',  // Base message for all Invalid* errors
+    InvalidEmailError::class => 'Please enter a valid email address',  // Specific override
+];
+
+$formatter = new ErrorMessageFormatter();
+$formatter->setMessages($messages);
+
+// InvalidEmailError → 'Please enter a valid email address' (specific)
+// InvalidUrlError → 'Invalid value' (falls back to base)
+// InvalidDateError → 'Invalid value' (falls back to base)
+```
+
+**Later definitions override earlier ones.** This makes it easy to merge preset messages with custom overrides:
+
+```php
+// Start with preset base messages
+$messages = [
+    EmptyError::class => 'This field is required',
+    InvalidError::class => 'Invalid value',
+    TooLongError::class => 'Text is too long',
+    TooSmallError::class => 'Value is too small',
+];
+
+// Add specific overrides
+$messages = [
+    ...$messages,  // Base messages
+    InvalidEmailError::class => 'Please enter a valid email address',
+    TooLongError::class => fn($e) => "Maximum {$e->formItem->getMaxLength()} characters",
+];
+
+$formatter = new ErrorMessageFormatter();
+$formatter->setMessages($messages);
+```
+
+### Adding Individual Messages
+
+Use `setMessage()` to add or override individual messages without replacing the entire set:
+
+```php
+$formatter = new ErrorMessageFormatter();
+
+// Set base messages
+$formatter->setMessages([
+    EmptyError::class => 'Required field',
+    InvalidError::class => 'Invalid value',
+]);
+
+// Add or override specific messages
+$formatter->setMessage(InvalidEmailError::class, 'Please enter a valid email');
+$formatter->setMessage(TooLongError::class, fn($e) => "Max {$e->formItem->getMaxLength()} chars");
+```
+
+### Dynamic Messages with Closures
+
+Use closures to access error object properties for dynamic messages:
+
+```php
+use Coroq\Form\ErrorMessageFormatter;
+use Coroq\Form\Error\EmptyError;
+use Coroq\Form\Error\TooLongError;
+use Coroq\Form\Error\TooSmallError;
+
+$messages = [
+    EmptyError::class => function(EmptyError $error) {
+        return $error->formItem->getLabel() . ' is required';
+    },
+    TooLongError::class => function(TooLongError $error) {
+        return 'Maximum ' . $error->formItem->getMaxLength() . ' characters allowed';
+    },
+    TooSmallError::class => function(TooSmallError $error) {
+        return 'Minimum value is ' . $error->formItem->getMin();
+    },
+];
+
+$formatter = new ErrorMessageFormatter();
+$formatter->setMessages($messages);
+```
+
+### Custom Error Types
+
+You can create custom error classes for application-specific validation:
+
+```php
+use Coroq\Form\Error\Error;
+use Coroq\Form\FormItem\FormItemInterface;
+
+// Define custom error
+class PasswordMismatchError extends Error {
+    /** @property-read PasswordInput $formItem */
+}
+
+class RateLimitError extends Error {
+    public function __construct(
+        FormItemInterface $formItem,
+        public readonly int $remainingSeconds
+    ) {
+        parent::__construct($formItem);
+    }
+}
+
+// Use in messages
+$messages = [
+    PasswordMismatchError::class => 'Passwords do not match',
+    RateLimitError::class => function(RateLimitError $error) {
+        return 'Too many attempts. Try again in ' . $error->remainingSeconds . ' seconds';
+    },
+];
+```
+
+### Built-in Error Types
+
+The library provides these error types:
+
+**Base Errors:**
+- `EmptyError` - Required field is empty
+- `InvalidError` - Generic validation failure (base class for format validation errors)
+
+**Invalid* Hierarchy (all extend InvalidError):**
+- `InvalidEmailError` - Invalid email format
+- `InvalidUrlError` - Invalid URL format
+- `InvalidDateError` - Invalid date format
+- `InvalidMimeTypeError` - File MIME type not allowed
+- `InvalidExtensionError` - File extension not allowed
+
+**Range/Length Errors:**
+- `TooShortError`, `TooLongError` - String length validation
+- `TooSmallError`, `TooLargeError` - Number range validation
+- `TooFewSelectionsError`, `TooManySelectionsError` - Multi-select count
+
+**Type/Format Errors:**
+- `NotIntegerError`, `NotNumericError` - Type validation
+- `PatternMismatchError` - Pattern validation failure
+
+**Selection Errors:**
+- `NotInOptionsError` - Invalid selection value
+
+**File Errors:**
+- `FileNotFoundError` - File not found at path
+- `FileTooLargeError`, `FileTooSmallError` - File size range
+
+**Derived Errors:**
+- `SourceItemInvalidError` - Derived item's source failed validation
+
+**Tip:** Define messages for base error types (like `InvalidError`) as catch-alls, then optionally override specific subtypes for custom messages.
+
+## Form Values
+
+Forms provide four methods to retrieve values:
+
+- **`getValue()`** - All values as strings (includes empty values)
+- **`getFilledValue()`** - Only non-empty values as strings
+- **`getParsedValue()`** - All values with proper types (int, bool, DateTime, etc.)
+- **`getFilledParsedValue()`** - Only non-empty values with proper types
+
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\IntegerInput;
+use Coroq\Form\FormItem\BooleanInput;
+use Coroq\Form\FormItem\TextInput;
+
+class UserForm extends Form {
+    public readonly EmailInput $email;
+    public readonly IntegerInput $age;
+    public readonly BooleanInput $newsletter;
+    public readonly TextInput $notes;
+
+    public function __construct() {
+        $this->email = new EmailInput();
+        $this->age = (new IntegerInput())->setRequired(false);
+        $this->newsletter = (new BooleanInput())->setRequired(false);
+        $this->notes = (new TextInput())->setRequired(false);
+    }
+}
+
+$form = new UserForm();
+$form->setValue([
+    'email' => 'user@example.com',
+    'age' => '25',
+    'newsletter' => 'on',
+    'notes' => ''
+]);
+
+// getValue() - raw strings, includes empty
+$form->getValue();
+// ['email' => 'user@example.com', 'age' => '25', 'newsletter' => 'on', 'notes' => '']
+
+// getFilledValue() - raw strings, excludes empty
+$form->getFilledValue();
+// ['email' => 'user@example.com', 'age' => '25', 'newsletter' => 'on']
+
+// getParsedValue() - proper types, includes empty
+$form->getParsedValue();
+// ['email' => 'user@example.com', 'age' => 25, 'newsletter' => true, 'notes' => '']
+
+// getFilledParsedValue() - proper types, excludes empty
+$form->getFilledParsedValue();
+// ['email' => 'user@example.com', 'age' => 25, 'newsletter' => true]
+```
+
 
 ## Input Types
 
@@ -547,604 +1124,6 @@ if ($form->validate()) {
 // Resubmission after error: newAvatar is empty, avatarId still has value
 ```
 
-## Validation
-
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\EmailInput;
-use Coroq\Form\FormItem\IntegerInput;
-
-class LoginForm extends Form {
-    public readonly EmailInput $email;
-    public readonly IntegerInput $age;
-
-    public function __construct() {
-        $this->email = new EmailInput();
-        $this->age = (new IntegerInput())->setMin(18);
-    }
-}
-
-$form = new LoginForm();
-$form->setValue([
-    'email' => 'invalid-email',
-    'age' => '15'
-]);
-
-if ($form->validate()) {
-    // All valid
-} else {
-    // Check individual fields
-    if ($form->email->hasError()) {
-        $error = $form->email->getError();
-        echo get_class($error); // "Coroq\Form\Error\InvalidEmailError"
-    }
-
-    if ($form->age->hasError()) {
-        $error = $form->age->getError();
-        echo get_class($error); // "Coroq\Form\Error\TooSmallError"
-    }
-
-    // Get all errors at once
-    $errors = $form->getError();
-    // ['email' => InvalidEmailError, 'age' => TooSmallError]
-}
-```
-
-### Custom Validators
-
-All Input subclasses support custom validators via `setValidator()`. This allows you to add validation logic without creating custom subclasses.
-
-#### Basic Example
-
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\TextInput;
-use Coroq\Form\Error\InvalidError;
-
-class RegistrationForm extends Form {
-    public readonly TextInput $username;
-
-    public function __construct() {
-        $this->username = (new TextInput())
-            ->setMinLength(3)
-            ->setValidator(function($formItem, $value) {
-                // Additional validation: no special characters
-                if (preg_match('/[^a-z0-9_]/', $value)) {
-                    return new InvalidError($formItem);
-                }
-                return null;
-            });
-    }
-}
-```
-
-#### How It Works
-
-The validator:
-- Receives two parameters: `$formItem` (the input itself) and `$value` (the filtered value)
-- Runs **after** the input's built-in validation (`doValidate()`) passes
-- Returns an `Error` object if validation fails, or `null` if valid
-- Does **not** run if the value is empty or if built-in validation fails
-
-```php
-use Coroq\Form\FormItem\EmailInput;
-use Coroq\Form\Error\InvalidError;
-
-$email = (new EmailInput())
-    ->setValidator(function($formItem, $value) {
-        // Block disposable email domains
-        if (str_ends_with($value, '@tempmail.com')) {
-            return new InvalidError($formItem);
-        }
-        return null;
-    });
-
-$email->setValue('user@tempmail.com');
-$email->validate(); // Fails - custom validator returns error
-
-$email->setValue('invalid-email');
-$email->validate(); // Fails - built-in email validation fails first
-                   // Custom validator never runs
-```
-
-#### Advanced Examples
-
-**Accessing form item properties:**
-
-```php
-use Coroq\Form\FormItem\IntegerInput;
-use Coroq\Form\Error\InvalidError;
-
-$quantity = (new IntegerInput())
-    ->setMin(1)
-    ->setMax(100)
-    ->setValidator(function($formItem, $value) {
-        // Reject quantities not divisible by 5
-        if ((int)$value % 5 !== 0) {
-            return new InvalidError($formItem);
-        }
-        return null;
-    });
-```
-
-### External Validation
-
-When you validate a value in external logic (authentication, API calls, business rules) but want to hold the error in the form, use `setError()` on a form item. The form item can be used only for holding the error.
-
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\EmailInput;
-use Coroq\Form\FormItem\TextInput;
-use Coroq\Form\FormItem\Input;
-use Coroq\Form\Error\InvalidError;
-
-class LoginForm extends Form {
-    public readonly EmailInput $email;
-    public readonly TextInput $password;
-    public readonly Input $authResult;
-
-    public function __construct() {
-        $this->email = new EmailInput();
-        $this->password = new TextInput();
-        $this->authResult = (new Input())->setReadOnly(true);
-    }
-}
-
-$form = new LoginForm();
-$form->setValue($_POST);
-
-if ($form->validate()) {
-    // External validation
-    if (!$authService->authenticate($form->email->getValue(), $form->password->getValue())) {
-        $form->authResult->setError(new InvalidError($form->authResult));
-    }
-}
-
-if ($form->hasError()) {
-    // Handle all errors uniformly
-}
-```
-
-## Error Messages
-
-Use `ErrorMessageFormatter` to convert error objects to human-readable messages. You define your own message set by mapping error class names to messages (strings or closures).
-
-### Basic Usage
-
-```php
-use Coroq\Form\ErrorMessageFormatter;
-use Coroq\Form\Error\EmptyError;
-use Coroq\Form\Error\InvalidError;
-use Coroq\Form\Error\TooLongError;
-use Coroq\Form\Error\TooSmallError;
-
-// Define your message set
-$messages = [
-    EmptyError::class => 'This field is required',
-    InvalidError::class => 'Invalid value',  // Catch-all for all Invalid* errors
-    TooSmallError::class => 'Value is too small',
-    TooLongError::class => 'Text is too long',
-];
-
-$formatter = new ErrorMessageFormatter();
-$formatter->setMessages($messages);
-
-// Format errors
-$form->validate();
-if ($form->email->hasError()) {
-    echo $formatter->format($form->email->getError());
-    // "Invalid value" (InvalidEmailError extends InvalidError)
-}
-```
-
-### Error Hierarchy and Inheritance
-
-The formatter uses `instanceof` matching, supporting error class inheritance. Many specific errors extend base error types. For example, `InvalidEmailError`, `InvalidUrlError`, `InvalidDateError`, `InvalidMimeTypeError`, and `InvalidExtensionError` all extend `InvalidError`.
-
-**Define base messages as defaults, then override specific types as needed:**
-
-```php
-use Coroq\Form\ErrorMessageFormatter;
-use Coroq\Form\Error\InvalidError;
-use Coroq\Form\Error\InvalidEmailError;
-
-$messages = [
-    InvalidError::class => 'Invalid value',  // Base message for all Invalid* errors
-    InvalidEmailError::class => 'Please enter a valid email address',  // Specific override
-];
-
-$formatter = new ErrorMessageFormatter();
-$formatter->setMessages($messages);
-
-// InvalidEmailError → 'Please enter a valid email address' (specific)
-// InvalidUrlError → 'Invalid value' (falls back to base)
-// InvalidDateError → 'Invalid value' (falls back to base)
-```
-
-**Later definitions override earlier ones.** This makes it easy to merge preset messages with custom overrides:
-
-```php
-// Start with preset base messages
-$messages = [
-    EmptyError::class => 'This field is required',
-    InvalidError::class => 'Invalid value',
-    TooLongError::class => 'Text is too long',
-    TooSmallError::class => 'Value is too small',
-];
-
-// Add specific overrides
-$messages = [
-    ...$messages,  // Base messages
-    InvalidEmailError::class => 'Please enter a valid email address',
-    TooLongError::class => fn($e) => "Maximum {$e->formItem->getMaxLength()} characters",
-];
-
-$formatter = new ErrorMessageFormatter();
-$formatter->setMessages($messages);
-```
-
-### Adding Individual Messages
-
-Use `setMessage()` to add or override individual messages without replacing the entire set:
-
-```php
-$formatter = new ErrorMessageFormatter();
-
-// Set base messages
-$formatter->setMessages([
-    EmptyError::class => 'Required field',
-    InvalidError::class => 'Invalid value',
-]);
-
-// Add or override specific messages
-$formatter->setMessage(InvalidEmailError::class, 'Please enter a valid email');
-$formatter->setMessage(TooLongError::class, fn($e) => "Max {$e->formItem->getMaxLength()} chars");
-```
-
-### Dynamic Messages with Closures
-
-Use closures to access error object properties for dynamic messages:
-
-```php
-use Coroq\Form\ErrorMessageFormatter;
-use Coroq\Form\Error\EmptyError;
-use Coroq\Form\Error\TooLongError;
-use Coroq\Form\Error\TooSmallError;
-
-$messages = [
-    EmptyError::class => function(EmptyError $error) {
-        return $error->formItem->getLabel() . ' is required';
-    },
-    TooLongError::class => function(TooLongError $error) {
-        return 'Maximum ' . $error->formItem->getMaxLength() . ' characters allowed';
-    },
-    TooSmallError::class => function(TooSmallError $error) {
-        return 'Minimum value is ' . $error->formItem->getMin();
-    },
-];
-
-$formatter = new ErrorMessageFormatter();
-$formatter->setMessages($messages);
-```
-
-### Custom Error Types
-
-You can create custom error classes for application-specific validation:
-
-```php
-use Coroq\Form\Error\Error;
-use Coroq\Form\FormItem\FormItemInterface;
-
-// Define custom error
-class PasswordMismatchError extends Error {
-    /** @property-read PasswordInput $formItem */
-}
-
-class RateLimitError extends Error {
-    public function __construct(
-        FormItemInterface $formItem,
-        public readonly int $remainingSeconds
-    ) {
-        parent::__construct($formItem);
-    }
-}
-
-// Use in messages
-$messages = [
-    PasswordMismatchError::class => 'Passwords do not match',
-    RateLimitError::class => function(RateLimitError $error) {
-        return 'Too many attempts. Try again in ' . $error->remainingSeconds . ' seconds';
-    },
-];
-```
-
-### Built-in Error Types
-
-The library provides these error types:
-
-**Base Errors:**
-- `EmptyError` - Required field is empty
-- `InvalidError` - Generic validation failure (base class for format validation errors)
-
-**Invalid* Hierarchy (all extend InvalidError):**
-- `InvalidEmailError` - Invalid email format
-- `InvalidUrlError` - Invalid URL format
-- `InvalidDateError` - Invalid date format
-- `InvalidMimeTypeError` - File MIME type not allowed
-- `InvalidExtensionError` - File extension not allowed
-
-**Range/Length Errors:**
-- `TooShortError`, `TooLongError` - String length validation
-- `TooSmallError`, `TooLargeError` - Number range validation
-- `TooFewSelectionsError`, `TooManySelectionsError` - Multi-select count
-
-**Type/Format Errors:**
-- `NotIntegerError`, `NotNumericError` - Type validation
-- `PatternMismatchError` - Pattern validation failure
-
-**Selection Errors:**
-- `NotInOptionsError` - Invalid selection value
-
-**File Errors:**
-- `FileNotFoundError` - File not found at path
-- `FileTooLargeError`, `FileTooSmallError` - File size range
-
-**Derived Errors:**
-- `SourceItemInvalidError` - Derived item's source failed validation
-
-**Tip:** Define messages for base error types (like `InvalidError`) as catch-alls, then optionally override specific subtypes for custom messages.
-
-
-## Form State
-
-Form items have three state flags that control their behavior:
-
-### Required/Optional
-
-**Input level:**
-- `setRequired(true)` (default) - Empty value fails validation with EmptyError
-- `setRequired(false)` - Empty value passes validation
-
-**Form level:**
-- `setRequired(true)` (default) - Validates all enabled items even if form is empty
-- `setRequired(false)` - If the entire form is empty, validation passes without checking items
-
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\TextInput;
-
-class ProfileForm extends Form {
-    public readonly TextInput $name;
-    public readonly TextInput $nickname;
-
-    public function __construct() {
-        $this->name = new TextInput();  // Required (default)
-        $this->nickname = (new TextInput())
-            ->setRequired(false);  // Optional
-    }
-}
-
-$form = new ProfileForm();
-$form->setValue(['name' => '', 'nickname' => '']);
-$form->validate();
-// name has EmptyError, nickname passes validation
-```
-
-**Form-level example:**
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\TextInput;
-
-class AddressForm extends Form {
-    public readonly TextInput $street;
-    public readonly TextInput $city;
-
-    public function __construct() {
-        $this->street = new TextInput();
-        $this->city = new TextInput();
-        $this->setRequired(false);  // Make entire form optional
-    }
-}
-
-$form = new AddressForm();
-$form->setValue(['street' => '', 'city' => '']);
-$form->validate();  // Passes! Empty optional form skips item validation
-```
-
-### Read-Only
-
-**Input level:**
-- `setValue()` is ignored (value doesn't change)
-- Item is included in `getValue()` and `validate()`
-
-**Form level:**
-- `setValue()` is ignored for the entire form
-- Items are included in `getValue()` and `validate()`
-
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\TextInput;
-
-class UserForm extends Form {
-    public readonly TextInput $id;
-    public readonly TextInput $name;
-
-    public function __construct() {
-        $this->id = (new TextInput())
-            ->setValue('12345')
-            ->setReadOnly(true);
-        $this->name = new TextInput();
-    }
-}
-
-$form = new UserForm();
-$form->setValue(['id' => '99999', 'name' => 'Taro']);
-
-echo $form->id->getValue();    // "12345" (unchanged)
-echo $form->name->getValue();  // "Taro"
-$form->validate();             // Both items are validated
-```
-
-**Form-level example:**
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\TextInput;
-
-class DisplayForm extends Form {
-    public readonly TextInput $field;
-
-    public function __construct() {
-        $this->field = (new TextInput())->setValue('fixed');
-        $this->setReadOnly(true);  // Entire form is read-only
-    }
-}
-
-$form = new DisplayForm();
-$form->setValue(['field' => 'new value']);  // Ignored!
-echo $form->field->getValue();  // "fixed"
-```
-
-### Disabled
-
-**Input level:**
-- Excluded from `getValue()` - not in returned array
-- Excluded from `setValue()` - value is not set
-- Excluded from `validate()` - not validated
-
-**Form level:**
-- Excluded from parent form's `getValue()`, `setValue()`, and `validate()`
-- Useful for conditionally hiding entire form sections
-
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\TextInput;
-
-class OrderForm extends Form {
-    public readonly TextInput $customerName;
-    public readonly TextInput $legacyField;
-
-    public function __construct() {
-        $this->customerName = new TextInput();
-        $this->legacyField = (new TextInput())
-            ->setDisabled(true);
-    }
-}
-
-$form = new OrderForm();
-$form->setValue([
-    'customerName' => 'Taro',
-    'legacyField' => 'ignored'
-]);
-
-$values = $form->getValue();
-// ['customerName' => 'Taro']
-// legacyField is completely ignored
-```
-
-**Form-level example:**
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\TextInput;
-
-class CheckoutForm extends Form {
-    public readonly TextInput $name;
-    public readonly AddressForm $billing;
-    public readonly AddressForm $shipping;
-
-    public function __construct() {
-        $this->name = new TextInput();
-        $this->billing = new AddressForm();
-        $this->shipping = new AddressForm();
-    }
-
-    public function disableShipping() {
-        $this->shipping->setDisabled(true);
-        return $this;
-    }
-}
-
-$form = new CheckoutForm();
-$form->disableShipping();
-
-$form->setValue([
-    'name' => 'Taro',
-    'billing' => ['street' => '1-1-1', 'city' => 'Tokyo'],
-    'shipping' => ['street' => '2-2-2', 'city' => 'Osaka']  // Ignored!
-]);
-
-$values = $form->getValue();
-// ['name' => 'Taro', 'billing' => ['street' => '1-1-1', 'city' => 'Tokyo']]
-// shipping is completely excluded
-```
-
-### State Summary
-
-| State | setValue() | getValue() | validate() |
-|-------|------------|------------|------------|
-| Normal (required=true) | ✓ Sets value | ✓ Included | ✓ Validated, must not be empty |
-| Optional (required=false) | ✓ Sets value | ✓ Included | ✓ Validated, empty allowed |
-| Read-only | ✗ Ignored | ✓ Included | ✓ Validated |
-| Disabled | ✗ Ignored | ✗ Excluded | ✗ Skipped |
-
-**Form-level states apply to the form as a whole:**
-- Required=false on Form: Empty form passes validation
-- ReadOnly on Form: setValue() ignored for entire form
-- Disabled on Form: Entire form excluded from parent's getValue/setValue/validate
-
-## Form Values
-
-Forms provide four methods to retrieve values:
-
-- **`getValue()`** - All values as strings (includes empty values)
-- **`getFilledValue()`** - Only non-empty values as strings
-- **`getParsedValue()`** - All values with proper types (int, bool, DateTime, etc.)
-- **`getFilledParsedValue()`** - Only non-empty values with proper types
-
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\EmailInput;
-use Coroq\Form\FormItem\IntegerInput;
-use Coroq\Form\FormItem\BooleanInput;
-use Coroq\Form\FormItem\TextInput;
-
-class UserForm extends Form {
-    public readonly EmailInput $email;
-    public readonly IntegerInput $age;
-    public readonly BooleanInput $newsletter;
-    public readonly TextInput $notes;
-
-    public function __construct() {
-        $this->email = new EmailInput();
-        $this->age = (new IntegerInput())->setRequired(false);
-        $this->newsletter = (new BooleanInput())->setRequired(false);
-        $this->notes = (new TextInput())->setRequired(false);
-    }
-}
-
-$form = new UserForm();
-$form->setValue([
-    'email' => 'user@example.com',
-    'age' => '25',
-    'newsletter' => 'on',
-    'notes' => ''
-]);
-
-// getValue() - raw strings, includes empty
-$form->getValue();
-// ['email' => 'user@example.com', 'age' => '25', 'newsletter' => 'on', 'notes' => '']
-
-// getFilledValue() - raw strings, excludes empty
-$form->getFilledValue();
-// ['email' => 'user@example.com', 'age' => '25', 'newsletter' => 'on']
-
-// getParsedValue() - proper types, includes empty
-$form->getParsedValue();
-// ['email' => 'user@example.com', 'age' => 25, 'newsletter' => true, 'notes' => '']
-
-// getFilledParsedValue() - proper types, excludes empty
-$form->getFilledParsedValue();
-// ['email' => 'user@example.com', 'age' => 25, 'newsletter' => true]
-```
 
 ## Nested Forms
 
@@ -1598,6 +1577,28 @@ if ($form->validate()) {
     }
 }
 ```
+
+## Configuration
+
+### UTF-8 Invalid Character Handling
+
+This library assumes all input is UTF-8 encoded. Invalid UTF-8 byte sequences are automatically replaced with a substitute character during filtering.
+
+By default, PHP uses `?` (U+003F QUESTION MARK) as the substitute character. For better visibility of data corruption, it's recommended to use `�` (U+FFFD REPLACEMENT CHARACTER) instead by configuring it in your application bootstrap:
+
+```php
+// Recommended: Use Unicode Replacement Character for invalid UTF-8 bytes
+mb_substitute_character(0xFFFD);  // U+FFFD: �
+```
+
+Alternative configurations:
+```php
+mb_substitute_character('none');   // Remove invalid bytes silently
+mb_substitute_character('long');   // Use U+XXXX notation
+mb_substitute_character('entity'); // Use &#XXXX; HTML entities
+```
+
+See [mb_substitute_character documentation](https://www.php.net/manual/en/function.mb-substitute-character.php) for more options.
 
 ## API Reference
 
