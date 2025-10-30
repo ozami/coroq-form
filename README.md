@@ -895,6 +895,257 @@ The library provides these error types:
 **Tip:** Define messages for base error types (like `InvalidError`) as catch-alls, then optionally override specific subtypes for custom messages.
 
 
+## Form State
+
+Form items have three state flags that control their behavior:
+
+### Required/Optional
+
+**Input level:**
+- `setRequired(true)` (default) - Empty value fails validation with EmptyError
+- `setRequired(false)` - Empty value passes validation
+
+**Form level:**
+- `setRequired(true)` (default) - Validates all enabled items even if form is empty
+- `setRequired(false)` - If the entire form is empty, validation passes without checking items
+
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
+class ProfileForm extends Form {
+    public readonly TextInput $name;
+    public readonly TextInput $nickname;
+
+    public function __construct() {
+        $this->name = new TextInput();  // Required (default)
+        $this->nickname = (new TextInput())
+            ->setRequired(false);  // Optional
+    }
+}
+
+$form = new ProfileForm();
+$form->setValue(['name' => '', 'nickname' => '']);
+$form->validate();
+// name has EmptyError, nickname passes validation
+```
+
+**Form-level example:**
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
+class AddressForm extends Form {
+    public readonly TextInput $street;
+    public readonly TextInput $city;
+
+    public function __construct() {
+        $this->street = new TextInput();
+        $this->city = new TextInput();
+        $this->setRequired(false);  // Make entire form optional
+    }
+}
+
+$form = new AddressForm();
+$form->setValue(['street' => '', 'city' => '']);
+$form->validate();  // Passes! Empty optional form skips item validation
+```
+
+### Read-Only
+
+**Input level:**
+- `setValue()` is ignored (value doesn't change)
+- Item is included in `getValue()` and `validate()`
+
+**Form level:**
+- `setValue()` is ignored for the entire form
+- Items are included in `getValue()` and `validate()`
+
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
+class UserForm extends Form {
+    public readonly TextInput $id;
+    public readonly TextInput $name;
+
+    public function __construct() {
+        $this->id = (new TextInput())
+            ->setValue('12345')
+            ->setReadOnly(true);
+        $this->name = new TextInput();
+    }
+}
+
+$form = new UserForm();
+$form->setValue(['id' => '99999', 'name' => 'Taro']);
+
+echo $form->id->getValue();    // "12345" (unchanged)
+echo $form->name->getValue();  // "Taro"
+$form->validate();             // Both items are validated
+```
+
+**Form-level example:**
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
+class DisplayForm extends Form {
+    public readonly TextInput $field;
+
+    public function __construct() {
+        $this->field = (new TextInput())->setValue('fixed');
+        $this->setReadOnly(true);  // Entire form is read-only
+    }
+}
+
+$form = new DisplayForm();
+$form->setValue(['field' => 'new value']);  // Ignored!
+echo $form->field->getValue();  // "fixed"
+```
+
+### Disabled
+
+**Input level:**
+- Excluded from `getValue()` - not in returned array
+- Excluded from `setValue()` - value is not set
+- Excluded from `validate()` - not validated
+
+**Form level:**
+- Excluded from parent form's `getValue()`, `setValue()`, and `validate()`
+- Useful for conditionally hiding entire form sections
+
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
+class OrderForm extends Form {
+    public readonly TextInput $customerName;
+    public readonly TextInput $legacyField;
+
+    public function __construct() {
+        $this->customerName = new TextInput();
+        $this->legacyField = (new TextInput())
+            ->setDisabled(true);
+    }
+}
+
+$form = new OrderForm();
+$form->setValue([
+    'customerName' => 'Taro',
+    'legacyField' => 'ignored'
+]);
+
+$values = $form->getValue();
+// ['customerName' => 'Taro']
+// legacyField is completely ignored
+```
+
+**Form-level example:**
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\TextInput;
+
+class CheckoutForm extends Form {
+    public readonly TextInput $name;
+    public readonly AddressForm $billing;
+    public readonly AddressForm $shipping;
+
+    public function __construct() {
+        $this->name = new TextInput();
+        $this->billing = new AddressForm();
+        $this->shipping = new AddressForm();
+    }
+
+    public function disableShipping() {
+        $this->shipping->setDisabled(true);
+        return $this;
+    }
+}
+
+$form = new CheckoutForm();
+$form->disableShipping();
+
+$form->setValue([
+    'name' => 'Taro',
+    'billing' => ['street' => '1-1-1', 'city' => 'Tokyo'],
+    'shipping' => ['street' => '2-2-2', 'city' => 'Osaka']  // Ignored!
+]);
+
+$values = $form->getValue();
+// ['name' => 'Taro', 'billing' => ['street' => '1-1-1', 'city' => 'Tokyo']]
+// shipping is completely excluded
+```
+
+### State Summary
+
+| State | setValue() | getValue() | validate() |
+|-------|------------|------------|------------|
+| Normal (required=true) | ✓ Sets value | ✓ Included | ✓ Validated, must not be empty |
+| Optional (required=false) | ✓ Sets value | ✓ Included | ✓ Validated, empty allowed |
+| Read-only | ✗ Ignored | ✓ Included | ✓ Validated |
+| Disabled | ✗ Ignored | ✗ Excluded | ✗ Skipped |
+
+**Form-level states apply to the form as a whole:**
+- Required=false on Form: Empty form passes validation
+- ReadOnly on Form: setValue() ignored for entire form
+- Disabled on Form: Entire form excluded from parent's getValue/setValue/validate
+
+## Form Values
+
+Forms provide four methods to retrieve values:
+
+- **`getValue()`** - All values as strings (includes empty values)
+- **`getFilledValue()`** - Only non-empty values as strings
+- **`getParsedValue()`** - All values with proper types (int, bool, DateTime, etc.)
+- **`getFilledParsedValue()`** - Only non-empty values with proper types
+
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\IntegerInput;
+use Coroq\Form\FormItem\BooleanInput;
+use Coroq\Form\FormItem\TextInput;
+
+class UserForm extends Form {
+    public readonly EmailInput $email;
+    public readonly IntegerInput $age;
+    public readonly BooleanInput $newsletter;
+    public readonly TextInput $notes;
+
+    public function __construct() {
+        $this->email = new EmailInput();
+        $this->age = (new IntegerInput())->setRequired(false);
+        $this->newsletter = (new BooleanInput())->setRequired(false);
+        $this->notes = (new TextInput())->setRequired(false);
+    }
+}
+
+$form = new UserForm();
+$form->setValue([
+    'email' => 'user@example.com',
+    'age' => '25',
+    'newsletter' => 'on',
+    'notes' => ''
+]);
+
+// getValue() - raw strings, includes empty
+$form->getValue();
+// ['email' => 'user@example.com', 'age' => '25', 'newsletter' => 'on', 'notes' => '']
+
+// getFilledValue() - raw strings, excludes empty
+$form->getFilledValue();
+// ['email' => 'user@example.com', 'age' => '25', 'newsletter' => 'on']
+
+// getParsedValue() - proper types, includes empty
+$form->getParsedValue();
+// ['email' => 'user@example.com', 'age' => 25, 'newsletter' => true, 'notes' => '']
+
+// getFilledParsedValue() - proper types, excludes empty
+$form->getFilledParsedValue();
+// ['email' => 'user@example.com', 'age' => 25, 'newsletter' => true]
+```
+
 ## Nested Forms
 
 ```php
@@ -1267,325 +1518,6 @@ echo $form->displayName->getValue(); // "TARO YAMADA" (calculated)
 $form->setValue(['firstName' => str_repeat('A', 30), 'lastName' => str_repeat('B', 30)]);
 $form->validate(); // Fails - displayName has TooLongError
 ```
-
-## Form State
-
-Form items have three state flags that control their behavior:
-
-### Required/Optional
-
-**Input level:**
-- `setRequired(true)` (default) - Empty value fails validation with EmptyError
-- `setRequired(false)` - Empty value passes validation
-
-**Form level:**
-- `setRequired(true)` (default) - Validates all enabled items even if form is empty
-- `setRequired(false)` - If the entire form is empty, validation passes without checking items
-
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\TextInput;
-
-class ProfileForm extends Form {
-    public readonly TextInput $name;
-    public readonly TextInput $nickname;
-
-    public function __construct() {
-        $this->name = new TextInput();  // Required (default)
-        $this->nickname = (new TextInput())
-            ->setRequired(false);  // Optional
-    }
-}
-
-$form = new ProfileForm();
-$form->setValue(['name' => '', 'nickname' => '']);
-$form->validate();
-// name has EmptyError, nickname passes validation
-```
-
-**Form-level example:**
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\TextInput;
-
-class AddressForm extends Form {
-    public readonly TextInput $street;
-    public readonly TextInput $city;
-
-    public function __construct() {
-        $this->street = new TextInput();
-        $this->city = new TextInput();
-        $this->setRequired(false);  // Make entire form optional
-    }
-}
-
-$form = new AddressForm();
-$form->setValue(['street' => '', 'city' => '']);
-$form->validate();  // Passes! Empty optional form skips item validation
-```
-
-### Read-Only
-
-**Input level:**
-- `setValue()` is ignored (value doesn't change)
-- Item is included in `getValue()` and `validate()`
-
-**Form level:**
-- `setValue()` is ignored for the entire form
-- Items are included in `getValue()` and `validate()`
-
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\TextInput;
-
-class UserForm extends Form {
-    public readonly TextInput $id;
-    public readonly TextInput $name;
-
-    public function __construct() {
-        $this->id = (new TextInput())
-            ->setValue('12345')
-            ->setReadOnly(true);
-        $this->name = new TextInput();
-    }
-}
-
-$form = new UserForm();
-$form->setValue(['id' => '99999', 'name' => 'Taro']);
-
-echo $form->id->getValue();    // "12345" (unchanged)
-echo $form->name->getValue();  // "Taro"
-$form->validate();             // Both items are validated
-```
-
-**Form-level example:**
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\TextInput;
-
-class DisplayForm extends Form {
-    public readonly TextInput $field;
-
-    public function __construct() {
-        $this->field = (new TextInput())->setValue('fixed');
-        $this->setReadOnly(true);  // Entire form is read-only
-    }
-}
-
-$form = new DisplayForm();
-$form->setValue(['field' => 'new value']);  // Ignored!
-echo $form->field->getValue();  // "fixed"
-```
-
-### Disabled
-
-**Input level:**
-- Excluded from `getValue()` - not in returned array
-- Excluded from `setValue()` - value is not set
-- Excluded from `validate()` - not validated
-
-**Form level:**
-- Excluded from parent form's `getValue()`, `setValue()`, and `validate()`
-- Useful for conditionally hiding entire form sections
-
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\TextInput;
-
-class OrderForm extends Form {
-    public readonly TextInput $customerName;
-    public readonly TextInput $legacyField;
-
-    public function __construct() {
-        $this->customerName = new TextInput();
-        $this->legacyField = (new TextInput())
-            ->setDisabled(true);
-    }
-}
-
-$form = new OrderForm();
-$form->setValue([
-    'customerName' => 'Taro',
-    'legacyField' => 'ignored'
-]);
-
-$values = $form->getValue();
-// ['customerName' => 'Taro']
-// legacyField is completely ignored
-```
-
-**Form-level example:**
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\TextInput;
-
-class CheckoutForm extends Form {
-    public readonly TextInput $name;
-    public readonly AddressForm $billing;
-    public readonly AddressForm $shipping;
-
-    public function __construct() {
-        $this->name = new TextInput();
-        $this->billing = new AddressForm();
-        $this->shipping = new AddressForm();
-    }
-
-    public function disableShipping() {
-        $this->shipping->setDisabled(true);
-        return $this;
-    }
-}
-
-$form = new CheckoutForm();
-$form->disableShipping();
-
-$form->setValue([
-    'name' => 'Taro',
-    'billing' => ['street' => '1-1-1', 'city' => 'Tokyo'],
-    'shipping' => ['street' => '2-2-2', 'city' => 'Osaka']  // Ignored!
-]);
-
-$values = $form->getValue();
-// ['name' => 'Taro', 'billing' => ['street' => '1-1-1', 'city' => 'Tokyo']]
-// shipping is completely excluded
-```
-
-### State Summary
-
-| State | setValue() | getValue() | validate() |
-|-------|------------|------------|------------|
-| Normal (required=true) | ✓ Sets value | ✓ Included | ✓ Validated, must not be empty |
-| Optional (required=false) | ✓ Sets value | ✓ Included | ✓ Validated, empty allowed |
-| Read-only | ✗ Ignored | ✓ Included | ✓ Validated |
-| Disabled | ✗ Ignored | ✗ Excluded | ✗ Skipped |
-
-**Form-level states apply to the form as a whole:**
-- Required=false on Form: Empty form passes validation
-- ReadOnly on Form: setValue() ignored for entire form
-- Disabled on Form: Entire form excluded from parent's getValue/setValue/validate
-
-## getValue() vs getFilledValue()
-
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\TextInput;
-use Coroq\Form\FormItem\EmailInput;
-use Coroq\Form\FormItem\TelInput;
-
-class ContactForm extends Form {
-    public readonly TextInput $name;
-    public readonly EmailInput $email;
-    public readonly TelInput $phone;
-
-    public function __construct() {
-        $this->name = new TextInput();
-        $this->email = new EmailInput();
-        $this->phone = new TelInput();
-    }
-}
-
-$form = new ContactForm();
-$form->setValue([
-    'name' => 'Taro',
-    'email' => '',
-    'phone' => ''
-]);
-
-// getValue() - includes empty values
-print_r($form->getValue());
-// ['name' => 'Taro', 'email' => '', 'phone' => '']
-
-// getFilledValue() - only non-empty values
-print_r($form->getFilledValue());
-// ['name' => 'Taro']
-
-// Useful for database inserts
-$db->insert('users', $form->getFilledValue());
-```
-
-## getParsedValue() vs getFilledParsedValue()
-
-`getParsedValue()` and `getFilledParsedValue()` return parsed values with proper PHP types instead of raw strings:
-
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\EmailInput;
-use Coroq\Form\FormItem\IntegerInput;
-use Coroq\Form\FormItem\DateInput;
-use Coroq\Form\FormItem\BooleanInput;
-use Coroq\Form\FormItem\TextInput;
-
-class UserForm extends Form {
-    public readonly EmailInput $email;
-    public readonly IntegerInput $age;
-    public readonly DateInput $birthDate;
-    public readonly BooleanInput $newsletter;
-    public readonly TextInput $notes;
-
-    public function __construct() {
-        $this->email = new EmailInput();
-        $this->age = (new IntegerInput())->setRequired(false);
-        $this->birthDate = new DateInput();
-        $this->newsletter = (new BooleanInput())->setRequired(false);
-        $this->notes = (new TextInput())->setRequired(false);
-    }
-}
-
-$form = new UserForm();
-$form->setValue([
-    'email' => 'user@example.com',
-    'age' => '25',                    // String from $_POST
-    'birthDate' => '1998-05-10',
-    'newsletter' => 'on',             // String from checkbox
-    'notes' => ''
-]);
-
-// getValue() - returns raw string values
-print_r($form->getValue());
-/*
-[
-  'email' => 'user@example.com',
-  'age' => '25',                      // String
-  'birthDate' => '1998-05-10',        // String
-  'newsletter' => 'on',               // String
-  'notes' => ''
-]
-*/
-
-// getParsedValue() - returns properly parsed values
-print_r($form->getParsedValue());
-/*
-[
-  'email' => 'user@example.com',      // Validated string
-  'age' => 25,                        // int (not string!)
-  'birthDate' => DateTime(...),       // DateTime object
-  'newsletter' => true,               // bool (not "on"!)
-  'notes' => ''
-]
-*/
-
-// getFilledParsedValue() - parsed values, excludes empty
-print_r($form->getFilledParsedValue());
-/*
-[
-  'email' => 'user@example.com',
-  'age' => 25,                        // int
-  'birthDate' => DateTime(...),       // DateTime object
-  'newsletter' => true                // bool
-]
-// 'notes' excluded (empty)
-*/
-```
-
-Type conversion by input:
-- **EmailInput**: `getParsedValue()` → validated `string|null` (same as `getEmail()`)
-- **IntegerInput**: `getParsedValue()` → `int|null` (not string "25")
-- **NumberInput**: `getParsedValue()` → `float|null`
-- **DateInput**: `getParsedValue()` → `DateTimeImmutable|null` (not string)
-- **BooleanInput**: `getParsedValue()` → `bool` (true/false, not "on"/""/)
-- **UrlInput**: `getParsedValue()` → validated `string|null`
-- **TelInput**: `getParsedValue()` → validated `string|null`
-- **TextInput, Select, FileInput**: `getParsedValue()` → same as `getValue()`
 
 ## Complete Example
 
