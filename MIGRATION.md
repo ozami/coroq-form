@@ -11,8 +11,33 @@ Version 3.0.0 is a major rewrite with significant breaking changes. The core arc
 - Namespace restructure: `Coroq\Form\Input\*` → `Coroq\Form\FormItem\*`
 - Form API completely redesigned (property-based instead of array-based)
 - Error handling redesigned (Error classes instead of error codes)
-- New features: BooleanInput, FileInput, RepeatingForm, getParsedValue()
+- New features: BooleanInput, FileInput, RepeatingForm, getParsedValue(), custom validators, error customizers
 - Removed methods: `setItem()`, `getItemIn()`, `addItem()`, etc.
+- Language/country-specific features moved to separate packages (`coroq/form-lang-ja`, `coroq/form-country-jp`)
+
+---
+
+## Language and Country-Specific Features
+
+To keep the core library language-agnostic, Japanese-specific and Japan country-specific features have been moved to separate packages:
+
+### `coroq/form-lang-ja` - Japanese Language Support
+- `NotKatakanaError` error class
+- `BasicErrorMessages` (Japanese error messages)
+- Katakana validation
+- Other Japanese language-specific features
+
+### `coroq/form-country-jp` - Japan Country-Specific Features
+- Postal code validation
+- Prefecture selection
+- Other Japan-specific form items
+
+**Migration:** If you use Japanese-specific features, install the appropriate packages:
+
+```bash
+composer require coroq/form-lang-ja
+composer require coroq/form-country-jp
+```
 
 ---
 
@@ -76,8 +101,8 @@ $select = new Select();
 | `Input\Date` | `FormItem\DateInput` |
 | `Input\Tel` | `FormItem\TelInput` |
 | `Input\Url` | `FormItem\UrlInput` |
-| `Input\Postal` | Removed - use `TextInput` with custom validation |
-| `Input\Katakana` | Removed - use `TextInput` with custom validation |
+| `Input\Postal` | Moved to `coroq/form-country-jp` package |
+| `Input\Katakana` | Moved to `coroq/form-lang-ja` package |
 | `Input\Select` | `FormItem\Select` |
 | `Input\MultiSelect` | `FormItem\MultiSelect` |
 | `Input\Computed` | `FormItem\Derived` |
@@ -544,7 +569,47 @@ $filled = $form->getFilledParsedValue();
 // ['age' => 30]  // Only non-empty, with type conversion
 ```
 
-### 6. TelInput Now Preserves Leading `+`
+### 6. Custom Validators and Error Customizers
+
+3.0.0 introduces two new features for flexible validation:
+
+**Custom Validators:**
+
+```php
+use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\Error\InvalidError;
+
+$username = (new TextInput())
+    ->setMinLength(3)
+    ->setValidator(function($formItem, $value) {
+        // Runs after built-in validation passes
+        if (preg_match('/[^a-z0-9_]/', $value)) {
+            return new InvalidError($formItem);
+        }
+        return null;
+    });
+```
+
+**Error Customizers:**
+
+```php
+use Coroq\Form\FormItem\BooleanInput;
+use Coroq\Form\Error\EmptyError;
+
+class NoAgreementError extends Error {}
+
+$agree = (new BooleanInput())
+    ->setRequired(true)
+    ->setErrorCustomizer(function($error, $formItem) {
+        // Transform error objects before they're stored
+        if ($error instanceof EmptyError) {
+            return new NoAgreementError($formItem);
+        }
+        return $error;
+    });
+```
+
+### 7. TelInput Now Preserves Leading `+`
 
 **Before (2.1.0):**
 ```php

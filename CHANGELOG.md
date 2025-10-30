@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fluent interface for all setter methods (return `$this`)
 - Support for read-only form items with `setReadOnly(bool)`
 - Specific error classes: EmptyError, InvalidError, TooShortError, TooLongError, TooSmallError, TooLargeError, NotIntegerError, NotNumericError, InvalidEmailError, InvalidUrlError, InvalidDateError, NotKatakanaError, NotInOptionsError, TooFewSelectionsError, TooManySelectionsError, PatternMismatchError, FileNotFoundError, FileTooLargeError, FileTooSmallError, InvalidMimeTypeError, InvalidExtensionError
+- `setValidator()` method on Input for custom validation closures
+- `setErrorCustomizer()` method on AbstractFormItem for transforming error objects
+- Derived inputs with `setValueCalculator()` and `setValidator()` for cross-field validation and calculated values
 
 ### Fixed
 - All string-based inputs (TextInput, EmailInput, UrlInput, TelInput, NumberInput, IntegerInput) now use `mb_scrub()` via StringFilterTrait to replace invalid UTF-8 byte sequences, preventing fatal TypeError from `preg_replace()` returning NULL
@@ -45,8 +48,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - IntegerInput precision bug - now correctly validates integers beyond PHP_INT_MAX/MIN using bcmath, preventing silent rejection of valid large integers
 - NumericRangeTrait now uses bcmath with dynamic scale detection for precise comparison of both integers and floats
 
+### Removed
+- **BREAKING:** NotKatakanaError and Japanese-specific validation will be moved to `coroq/form-lang-ja` package
+- **BREAKING:** BasicErrorMessages (Japanese error messages) will be moved to `coroq/form-lang-ja` package
+- **BREAKING:** Japan country-specific form items will be moved to `coroq/form-country-jp` package
+
 ### Migration
 See [MIGRATION.md](MIGRATION.md) for detailed migration guide from 2.1.0 to 3.0.0.
+
+**Note:** Language-specific and country-specific features are being separated into dedicated packages:
+- `coroq/form-lang-ja` - Japanese language support (error messages, Katakana validation)
+- `coroq/form-country-jp` - Japan country-specific form items (postal code, prefecture, etc.)
 
 ## [2.1.0] - Previous Release
 
