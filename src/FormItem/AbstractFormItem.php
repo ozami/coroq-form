@@ -86,7 +86,7 @@ abstract class AbstractFormItem implements FormItemInterface {
   }
 
   /** Set error customizer closure */
-  public function setErrorCustomizer(?閉鎖 $customizer): self {
+  public function setErrorCustomizer(?\Closure $customizer): self {
     $this->errorCustomizer = $customizer;
     return $this;
   }
