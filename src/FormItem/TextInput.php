@@ -149,7 +149,7 @@ class TextInput extends Input implements HasLengthRangeInterface {
     $value = "$value";
     $value = $this->scrubUtf8($value);
     if ($this->unicodeNormalization !== null) {
-      $value = $this->normalizeUnicode($value, $this->unicodeNormalization, false);
+      $value = $this->normalizeUnicode($value, $this->unicodeNormalization);
     }
     if ($this->mb !== null) {
       $value = mb_convert_kana($value, $this->mb, "UTF-8");

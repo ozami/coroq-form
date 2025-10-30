@@ -58,15 +58,10 @@ trait StringFilterTrait {
    *
    * @param string $value Input string
    * @param string $form Normalization form ('NFC'|'NFD'|'NFKC'|'NFKD')
-   * @param bool $strict If true, throw exception when normalization unavailable
-   * @return string Normalized string, or original if unavailable and not strict
-   * @throws \LogicException If normalization unavailable and strict=true
+   * @return string Normalized string, or original if intl extension unavailable
    */
-  protected function normalizeUnicode(string $value, string $form, bool $strict = false): string {
+  protected function normalizeUnicode(string $value, string $form): string {
     if (!extension_loaded('intl')) {
-      if ($strict) {
-        throw new \LogicException('Unicode normalization unavailable (intl extension not loaded)');
-      }
       return $value;
     }
 
