@@ -547,11 +547,54 @@ if ($form->validate()) {
 // Resubmission after error: newAvatar is empty, avatarId still has value
 ```
 
-## Custom Validators
+## Validation
+
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\IntegerInput;
+
+class LoginForm extends Form {
+    public readonly EmailInput $email;
+    public readonly IntegerInput $age;
+
+    public function __construct() {
+        $this->email = new EmailInput();
+        $this->age = (new IntegerInput())->setMin(18);
+    }
+}
+
+$form = new LoginForm();
+$form->setValue([
+    'email' => 'invalid-email',
+    'age' => '15'
+]);
+
+if ($form->validate()) {
+    // All valid
+} else {
+    // Check individual fields
+    if ($form->email->hasError()) {
+        $error = $form->email->getError();
+        echo get_class($error); // "Coroq\Form\Error\InvalidEmailError"
+    }
+
+    if ($form->age->hasError()) {
+        $error = $form->age->getError();
+        echo get_class($error); // "Coroq\Form\Error\TooSmallError"
+    }
+
+    // Get all errors at once
+    $errors = $form->getError();
+    // ['email' => InvalidEmailError, 'age' => TooSmallError]
+}
+```
+
+### Custom Validators
 
 All Input subclasses support custom validators via `setValidator()`. This allows you to add validation logic without creating custom subclasses.
 
-### Basic Example
+#### Basic Example
 
 ```php
 use Coroq\Form\Form;
@@ -575,7 +618,7 @@ class RegistrationForm extends Form {
 }
 ```
 
-### How It Works
+#### How It Works
 
 The validator:
 - Receives two parameters: `$formItem` (the input itself) and `$value` (the filtered value)
@@ -604,7 +647,7 @@ $email->validate(); // Fails - built-in email validation fails first
                    // Custom validator never runs
 ```
 
-### Advanced Examples
+#### Advanced Examples
 
 **Accessing form item properties:**
 
@@ -624,66 +667,233 @@ $quantity = (new IntegerInput())
     });
 ```
 
-**Business logic validation:**
+### External Validation
+
+When you validate a value in external logic (authentication, API calls, business rules) but want to hold the error in the form, use `setError()` on a form item. The form item can be used only for holding the error.
 
 ```php
-use Coroq\Form\FormItem\DateInput;
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\EmailInput;
+use Coroq\Form\FormItem\TextInput;
+use Coroq\Form\FormItem\Input;
 use Coroq\Form\Error\InvalidError;
 
-$eventDate = (new DateInput())
-    ->setValidator(function($formItem, $value) {
-        $date = new DateTime($value);
-        $today = new DateTime('today');
+class LoginForm extends Form {
+    public readonly EmailInput $email;
+    public readonly TextInput $password;
+    public readonly Input $authResult;
 
-        // Must be in the future
-        if ($date <= $today) {
-            return new InvalidError($formItem);
-        }
+    public function __construct() {
+        $this->email = new EmailInput();
+        $this->password = new TextInput();
+        $this->authResult = (new Input())->setReadOnly(true);
+    }
+}
 
-        // No events on Sundays
-        if ($date->format('w') === '0') {
-            return new InvalidError($formItem);
-        }
+$form = new LoginForm();
+$form->setValue($_POST);
 
-        return null;
-    });
+if ($form->validate()) {
+    // External validation
+    if (!$authService->authenticate($form->email->getValue(), $form->password->getValue())) {
+        $form->authResult->setError(new InvalidError($form->authResult));
+    }
+}
+
+if ($form->hasError()) {
+    // Handle all errors uniformly
+}
 ```
 
-**Custom error types:**
+## Error Messages
+
+Use `ErrorMessageFormatter` to convert error objects to human-readable messages. You define your own message set by mapping error class names to messages (strings or closures).
+
+### Basic Usage
+
+```php
+use Coroq\Form\ErrorMessageFormatter;
+use Coroq\Form\Error\EmptyError;
+use Coroq\Form\Error\InvalidError;
+use Coroq\Form\Error\TooLongError;
+use Coroq\Form\Error\TooSmallError;
+
+// Define your message set
+$messages = [
+    EmptyError::class => 'This field is required',
+    InvalidError::class => 'Invalid value',  // Catch-all for all Invalid* errors
+    TooSmallError::class => 'Value is too small',
+    TooLongError::class => 'Text is too long',
+];
+
+$formatter = new ErrorMessageFormatter();
+$formatter->setMessages($messages);
+
+// Format errors
+$form->validate();
+if ($form->email->hasError()) {
+    echo $formatter->format($form->email->getError());
+    // "Invalid value" (InvalidEmailError extends InvalidError)
+}
+```
+
+### Error Hierarchy and Inheritance
+
+The formatter uses `instanceof` matching, supporting error class inheritance. Many specific errors extend base error types. For example, `InvalidEmailError`, `InvalidUrlError`, `InvalidDateError`, `InvalidMimeTypeError`, and `InvalidExtensionError` all extend `InvalidError`.
+
+**Define base messages as defaults, then override specific types as needed:**
+
+```php
+use Coroq\Form\ErrorMessageFormatter;
+use Coroq\Form\Error\InvalidError;
+use Coroq\Form\Error\InvalidEmailError;
+
+$messages = [
+    InvalidError::class => 'Invalid value',  // Base message for all Invalid* errors
+    InvalidEmailError::class => 'Please enter a valid email address',  // Specific override
+];
+
+$formatter = new ErrorMessageFormatter();
+$formatter->setMessages($messages);
+
+// InvalidEmailError → 'Please enter a valid email address' (specific)
+// InvalidUrlError → 'Invalid value' (falls back to base)
+// InvalidDateError → 'Invalid value' (falls back to base)
+```
+
+**Later definitions override earlier ones.** This makes it easy to merge preset messages with custom overrides:
+
+```php
+// Start with preset base messages
+$messages = [
+    EmptyError::class => 'This field is required',
+    InvalidError::class => 'Invalid value',
+    TooLongError::class => 'Text is too long',
+    TooSmallError::class => 'Value is too small',
+];
+
+// Add specific overrides
+$messages = [
+    ...$messages,  // Base messages
+    InvalidEmailError::class => 'Please enter a valid email address',
+    TooLongError::class => fn($e) => "Maximum {$e->formItem->getMaxLength()} characters",
+];
+
+$formatter = new ErrorMessageFormatter();
+$formatter->setMessages($messages);
+```
+
+### Adding Individual Messages
+
+Use `setMessage()` to add or override individual messages without replacing the entire set:
+
+```php
+$formatter = new ErrorMessageFormatter();
+
+// Set base messages
+$formatter->setMessages([
+    EmptyError::class => 'Required field',
+    InvalidError::class => 'Invalid value',
+]);
+
+// Add or override specific messages
+$formatter->setMessage(InvalidEmailError::class, 'Please enter a valid email');
+$formatter->setMessage(TooLongError::class, fn($e) => "Max {$e->formItem->getMaxLength()} chars");
+```
+
+### Dynamic Messages with Closures
+
+Use closures to access error object properties for dynamic messages:
+
+```php
+use Coroq\Form\ErrorMessageFormatter;
+use Coroq\Form\Error\EmptyError;
+use Coroq\Form\Error\TooLongError;
+use Coroq\Form\Error\TooSmallError;
+
+$messages = [
+    EmptyError::class => function(EmptyError $error) {
+        return $error->formItem->getLabel() . ' is required';
+    },
+    TooLongError::class => function(TooLongError $error) {
+        return 'Maximum ' . $error->formItem->getMaxLength() . ' characters allowed';
+    },
+    TooSmallError::class => function(TooSmallError $error) {
+        return 'Minimum value is ' . $error->formItem->getMin();
+    },
+];
+
+$formatter = new ErrorMessageFormatter();
+$formatter->setMessages($messages);
+```
+
+### Custom Error Types
+
+You can create custom error classes for application-specific validation:
 
 ```php
 use Coroq\Form\Error\Error;
 use Coroq\Form\FormItem\FormItemInterface;
 
 // Define custom error
-class WeakPasswordError extends Error {}
+class PasswordMismatchError extends Error {
+    /** @property-read PasswordInput $formItem */
+}
 
-// Use in validator
-$password = (new TextInput())
-    ->setMinLength(8)
-    ->setValidator(function($formItem, $value) {
-        // Require uppercase, lowercase, and number
-        if (!preg_match('/[A-Z]/', $value) ||
-            !preg_match('/[a-z]/', $value) ||
-            !preg_match('/[0-9]/', $value)) {
-            return new WeakPasswordError($formItem);
-        }
-        return null;
-    });
+class RateLimitError extends Error {
+    public function __construct(
+        FormItemInterface $formItem,
+        public readonly int $remainingSeconds
+    ) {
+        parent::__construct($formItem);
+    }
+}
+
+// Use in messages
+$messages = [
+    PasswordMismatchError::class => 'Passwords do not match',
+    RateLimitError::class => function(RateLimitError $error) {
+        return 'Too many attempts. Try again in ' . $error->remainingSeconds . ' seconds';
+    },
+];
 ```
 
-### When to Use
+### Built-in Error Types
 
-**Use `setValidator()` for:**
-- One-off validation in specific forms
-- Prototyping before creating proper subclasses
-- Simple regex or format checks
-- Business logic that varies by context
+The library provides these error types:
 
-**Use subclasses for:**
-- Reusable validation across multiple forms
-- Complex validation logic
-- Validation that should be documented in API
+**Base Errors:**
+- `EmptyError` - Required field is empty
+- `InvalidError` - Generic validation failure (base class for format validation errors)
+
+**Invalid* Hierarchy (all extend InvalidError):**
+- `InvalidEmailError` - Invalid email format
+- `InvalidUrlError` - Invalid URL format
+- `InvalidDateError` - Invalid date format
+- `InvalidMimeTypeError` - File MIME type not allowed
+- `InvalidExtensionError` - File extension not allowed
+
+**Range/Length Errors:**
+- `TooShortError`, `TooLongError` - String length validation
+- `TooSmallError`, `TooLargeError` - Number range validation
+- `TooFewSelectionsError`, `TooManySelectionsError` - Multi-select count
+
+**Type/Format Errors:**
+- `NotIntegerError`, `NotNumericError` - Type validation
+- `PatternMismatchError` - Pattern validation failure
+
+**Selection Errors:**
+- `NotInOptionsError` - Invalid selection value
+
+**File Errors:**
+- `FileNotFoundError` - File not found at path
+- `FileTooLargeError`, `FileTooSmallError` - File size range
+
+**Derived Errors:**
+- `SourceItemInvalidError` - Derived item's source failed validation
+
+**Tip:** Define messages for base error types (like `InvalidError`) as catch-alls, then optionally override specific subtypes for custom messages.
+
 
 ## Nested Forms
 
@@ -1057,343 +1267,6 @@ echo $form->displayName->getValue(); // "TARO YAMADA" (calculated)
 $form->setValue(['firstName' => str_repeat('A', 30), 'lastName' => str_repeat('B', 30)]);
 $form->validate(); // Fails - displayName has TooLongError
 ```
-
-## Validation
-
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\EmailInput;
-use Coroq\Form\FormItem\IntegerInput;
-
-class LoginForm extends Form {
-    public readonly EmailInput $email;
-    public readonly IntegerInput $age;
-
-    public function __construct() {
-        $this->email = new EmailInput();
-        $this->age = (new IntegerInput())->setMin(18);
-    }
-}
-
-$form = new LoginForm();
-$form->setValue([
-    'email' => 'invalid-email',
-    'age' => '15'
-]);
-
-if ($form->validate()) {
-    // All valid
-} else {
-    // Check individual fields
-    if ($form->email->hasError()) {
-        $error = $form->email->getError();
-        echo get_class($error); // "Coroq\Form\Error\InvalidEmailError"
-    }
-
-    if ($form->age->hasError()) {
-        $error = $form->age->getError();
-        echo get_class($error); // "Coroq\Form\Error\TooSmallError"
-    }
-
-    // Get all errors at once
-    $errors = $form->getError();
-    // ['email' => InvalidEmailError, 'age' => TooSmallError]
-}
-```
-
-### External Validation
-
-Sometimes you need to store validation errors from external sources (authentication services, APIs, business logic checks, etc.) as part of your form. Since these errors don't come from user input validation, you can use any form item to store them.
-
-**Recommended approaches:**
-
-1. **Use `Input` with readonly flag** - Simple and explicit
-2. **Use `Derived` with no sources** - Automatically readonly, semantically signals "not user input"
-
-Both approaches work identically - choose based on your preference.
-
-#### Option 1: Using Input (Readonly)
-
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\EmailInput;
-use Coroq\Form\FormItem\TextInput;
-use Coroq\Form\FormItem\Input;
-use Coroq\Form\Error\InvalidError;
-
-class LoginForm extends Form {
-    public readonly EmailInput $email;
-    public readonly TextInput $password;
-    public readonly Input $authResult;  // For external validation errors
-
-    public function __construct() {
-        $this->email = new EmailInput();
-        $this->password = new TextInput();
-        // Plain Input marked as readonly
-        $this->authResult = (new Input())->setReadOnly(true);
-    }
-}
-
-// In your controller
-$form = new LoginForm();
-$form->setValue($_POST);
-
-if ($form->validate()) {
-    // Perform external validation (API call, authentication, etc.)
-    if (!$authService->authenticate($form->email->getValue(), $form->password->getValue())) {
-        // Store the external error
-        $form->authResult->setError(new InvalidError($form->authResult));
-    }
-}
-
-if ($form->hasError()) {
-    if ($form->authResult->hasError()) {
-        echo "Login failed - invalid credentials";
-    }
-}
-```
-
-#### Option 2: Using Derived
-
-```php
-use Coroq\Form\Form;
-use Coroq\Form\FormItem\EmailInput;
-use Coroq\Form\FormItem\TextInput;
-use Coroq\Form\FormItem\Derived;
-use Coroq\Form\Error\InvalidError;
-
-class LoginForm extends Form {
-    public readonly EmailInput $email;
-    public readonly TextInput $password;
-    public readonly Derived $authResult;  // For external validation errors
-
-    public function __construct() {
-        $this->email = new EmailInput();
-        $this->password = new TextInput();
-        // Derived with no sources - automatically readonly
-        $this->authResult = new Derived();
-    }
-}
-
-// Controller code is identical to Option 1
-$form = new LoginForm();
-$form->setValue($_POST);
-
-if ($form->validate()) {
-    if (!$authService->authenticate($form->email->getValue(), $form->password->getValue())) {
-        $form->authResult->setError(new InvalidError($form->authResult));
-    }
-}
-
-if ($form->hasError()) {
-    if ($form->authResult->hasError()) {
-        echo "Login failed - invalid credentials";
-    }
-}
-```
-
-**Common use cases:**
-- Authentication failures (login, password verification)
-- API rate limiting
-- Business logic checks (inventory availability, duplicate detection)
-- CAPTCHA/reCAPTCHA verification
-- Payment gateway responses
-
-**Why use a dedicated form item?**
-- Errors participate in `$form->hasError()` checks
-- Consistent error handling with other form fields
-- Can use `ErrorMessageFormatter` for all errors uniformly
-- Form state is self-contained (no separate error tracking needed)
-
-## Error Messages
-
-Use `ErrorMessageFormatter` to convert error objects to human-readable messages. You define your own message set by mapping error class names to messages (strings or closures).
-
-### Basic Usage
-
-```php
-use Coroq\Form\ErrorMessageFormatter;
-use Coroq\Form\Error\EmptyError;
-use Coroq\Form\Error\InvalidError;
-use Coroq\Form\Error\TooLongError;
-use Coroq\Form\Error\TooSmallError;
-
-// Define your message set
-$messages = [
-    EmptyError::class => 'This field is required',
-    InvalidError::class => 'Invalid value',  // Catch-all for all Invalid* errors
-    TooSmallError::class => 'Value is too small',
-    TooLongError::class => 'Text is too long',
-];
-
-$formatter = new ErrorMessageFormatter();
-$formatter->setMessages($messages);
-
-// Format errors
-$form->validate();
-if ($form->email->hasError()) {
-    echo $formatter->format($form->email->getError());
-    // "Invalid value" (InvalidEmailError extends InvalidError)
-}
-```
-
-### Error Hierarchy and Inheritance
-
-The formatter uses `instanceof` matching, supporting error class inheritance. Many specific errors extend base error types. For example, `InvalidEmailError`, `InvalidUrlError`, `InvalidDateError`, `InvalidMimeTypeError`, and `InvalidExtensionError` all extend `InvalidError`.
-
-**Define base messages as defaults, then override specific types as needed:**
-
-```php
-use Coroq\Form\ErrorMessageFormatter;
-use Coroq\Form\Error\InvalidError;
-use Coroq\Form\Error\InvalidEmailError;
-
-$messages = [
-    InvalidError::class => 'Invalid value',  // Base message for all Invalid* errors
-    InvalidEmailError::class => 'Please enter a valid email address',  // Specific override
-];
-
-$formatter = new ErrorMessageFormatter();
-$formatter->setMessages($messages);
-
-// InvalidEmailError → 'Please enter a valid email address' (specific)
-// InvalidUrlError → 'Invalid value' (falls back to base)
-// InvalidDateError → 'Invalid value' (falls back to base)
-```
-
-**Later definitions override earlier ones.** This makes it easy to merge preset messages with custom overrides:
-
-```php
-// Start with preset base messages
-$messages = [
-    EmptyError::class => 'This field is required',
-    InvalidError::class => 'Invalid value',
-    TooLongError::class => 'Text is too long',
-    TooSmallError::class => 'Value is too small',
-];
-
-// Add specific overrides
-$messages = [
-    ...$messages,  // Base messages
-    InvalidEmailError::class => 'Please enter a valid email address',
-    TooLongError::class => fn($e) => "Maximum {$e->formItem->getMaxLength()} characters",
-];
-
-$formatter = new ErrorMessageFormatter();
-$formatter->setMessages($messages);
-```
-
-### Adding Individual Messages
-
-Use `setMessage()` to add or override individual messages without replacing the entire set:
-
-```php
-$formatter = new ErrorMessageFormatter();
-
-// Set base messages
-$formatter->setMessages([
-    EmptyError::class => 'Required field',
-    InvalidError::class => 'Invalid value',
-]);
-
-// Add or override specific messages
-$formatter->setMessage(InvalidEmailError::class, 'Please enter a valid email');
-$formatter->setMessage(TooLongError::class, fn($e) => "Max {$e->formItem->getMaxLength()} chars");
-```
-
-### Dynamic Messages with Closures
-
-Use closures to access error object properties for dynamic messages:
-
-```php
-use Coroq\Form\ErrorMessageFormatter;
-use Coroq\Form\Error\EmptyError;
-use Coroq\Form\Error\TooLongError;
-use Coroq\Form\Error\TooSmallError;
-
-$messages = [
-    EmptyError::class => function(EmptyError $error) {
-        return $error->formItem->getLabel() . ' is required';
-    },
-    TooLongError::class => function(TooLongError $error) {
-        return 'Maximum ' . $error->formItem->getMaxLength() . ' characters allowed';
-    },
-    TooSmallError::class => function(TooSmallError $error) {
-        return 'Minimum value is ' . $error->formItem->getMin();
-    },
-];
-
-$formatter = new ErrorMessageFormatter();
-$formatter->setMessages($messages);
-```
-
-### Custom Error Types
-
-You can create custom error classes for application-specific validation:
-
-```php
-use Coroq\Form\Error\Error;
-use Coroq\Form\FormItem\FormItemInterface;
-
-// Define custom error
-class PasswordMismatchError extends Error {
-    /** @property-read PasswordInput $formItem */
-}
-
-class RateLimitError extends Error {
-    public function __construct(
-        FormItemInterface $formItem,
-        public readonly int $remainingSeconds
-    ) {
-        parent::__construct($formItem);
-    }
-}
-
-// Use in messages
-$messages = [
-    PasswordMismatchError::class => 'Passwords do not match',
-    RateLimitError::class => function(RateLimitError $error) {
-        return 'Too many attempts. Try again in ' . $error->remainingSeconds . ' seconds';
-    },
-];
-```
-
-### Built-in Error Types
-
-The library provides these error types:
-
-**Base Errors:**
-- `EmptyError` - Required field is empty
-- `InvalidError` - Generic validation failure (base class for format validation errors)
-
-**Invalid* Hierarchy (all extend InvalidError):**
-- `InvalidEmailError` - Invalid email format
-- `InvalidUrlError` - Invalid URL format
-- `InvalidDateError` - Invalid date format
-- `InvalidMimeTypeError` - File MIME type not allowed
-- `InvalidExtensionError` - File extension not allowed
-
-**Range/Length Errors:**
-- `TooShortError`, `TooLongError` - String length validation
-- `TooSmallError`, `TooLargeError` - Number range validation
-- `TooFewSelectionsError`, `TooManySelectionsError` - Multi-select count
-
-**Type/Format Errors:**
-- `NotIntegerError`, `NotNumericError` - Type validation
-- `PatternMismatchError` - Pattern validation failure
-
-**Selection Errors:**
-- `NotInOptionsError` - Invalid selection value
-
-**File Errors:**
-- `FileNotFoundError` - File not found at path
-- `FileTooLargeError`, `FileTooSmallError` - File size range
-
-**Derived Errors:**
-- `SourceItemInvalidError` - Derived item's source failed validation
-
-**Tip:** Define messages for base error types (like `InvalidError`) as catch-alls, then optionally override specific subtypes for custom messages.
-
 
 ## Form State
 
