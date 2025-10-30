@@ -37,7 +37,7 @@ class Form implements FormInterface {
       return $this;
     }
     foreach ($this->getEnabledItems() as $name => $item) {
-      $item->setValue($value[$name] ?? '');
+      $item->setValue($value[$name] ?? null);
     }
     return $this;
   }
