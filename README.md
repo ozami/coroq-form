@@ -92,13 +92,17 @@ if ($form->validate()) {
 
 ## Core Concepts
 
-**Form subclasses** define typed readonly properties for IDE support and type safety. Each property that implements `FormItemInterface` becomes a form field.
+### 1. Forms and Form Items
+A **Form** holds items with names. Each item represents a single field - an email address, a username, a number, etc.
 
-**Validation** happens in two stages:
-1. `filter()` - Normalizes/transforms input automatically when setValue() is called
-2. `validate()` - Validates the filtered value when validate() is called
+### 2. Setting Values
+When you assign values to a form, the form distributes those values to its items by matching names. Each item receives and stores its corresponding value.
 
-**Errors** are specific classes (EmptyError, TooLongError, etc.) not string codes.
+### 3. Filtering
+The moment a value is set, it is automatically **filtered** - normalized and transformed according to the item's type. Email addresses get trimmed and lowercased, numbers get stripped of formatting.
+
+### 4. Validation and Errors
+When you request validation, the form checks all its items. Each item validates its value against its rules. The form returns whether all items are valid. Invalid items store an error object representing what went wrong.
 
 ## Defining Forms
 
