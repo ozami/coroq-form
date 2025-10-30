@@ -507,6 +507,68 @@ if ($form->hasError()) {
 }
 ```
 
+### Conditional Validation
+
+Make validation rules conditional based on other field values by overriding `setValue()` in your Form subclass.
+
+```php
+use Coroq\Form\Form;
+use Coroq\Form\FormItem\BooleanInput;
+use Coroq\Form\FormItem\TextInput;
+
+class RegistrationForm extends Form {
+    public readonly BooleanInput $isCompany;
+    public readonly TextInput $companyName;
+    public readonly TextInput $division;
+
+    public function __construct() {
+        $this->isCompany = new BooleanInput();
+        $this->companyName = new TextInput();
+        $this->division = new TextInput();
+    }
+
+    public function setValue(mixed $value): self {
+        parent::setValue($value);
+
+        // Conditional validation: enable company fields only if isCompany is true
+        $isCompany = $this->isCompany->getBoolean();
+        $this->companyName->setDisabled(!$isCompany);
+        $this->division->setDisabled(!$isCompany);
+
+        return $this;
+    }
+}
+
+$form = new RegistrationForm();
+$form->setValue(['isCompany' => 'on', 'companyName' => '', 'division' => '']);
+$form->validate();
+// companyName and division have EmptyError (enabled and required)
+
+$form->setValue(['isCompany' => '', 'companyName' => '', 'division' => '']);
+$form->validate();
+// companyName and division are excluded from validation (disabled)
+```
+
+This pattern works for any conditional logic: disabling fields, changing constraints, or toggling entire sections.
+
+For conditional sections (multi-step forms, draft/publish workflows), use nested forms with `setDisabled()`:
+
+```php
+class CheckoutForm extends Form {
+    public readonly BillingForm $billing;
+    public readonly ShippingForm $shipping;
+
+    public function setValue(mixed $value): self {
+        parent::setValue($value);
+
+        // Disable shipping section if same as billing
+        $this->shipping->setDisabled($this->billing->sameAsShipping->getBoolean());
+
+        return $this;
+    }
+}
+```
+
 ## Error Handling
 
 ### Error Customizer
