@@ -24,6 +24,15 @@ PHP form validation library. Type-safe, zero dependencies.
 
 This is a **validation and data processing layer** that sits between your HTTP layer and business logic.
 
+## Requirements
+
+- PHP >= 8.0
+- mbstring extension
+- fileinfo extension
+- filter extension
+- bcmath extension
+- intl extension (optional)
+
 ## Installation
 
 ```bash
@@ -1977,11 +1986,6 @@ $repeating->setDisabled(bool);
 $repeating->clear();                     // Clears all item values
 $isEmpty = $repeating->isEmpty();
 ```
-
-## Requirements
-
-- PHP >= 8.0
-- bcmath extension (for precise integer validation beyond PHP_INT_MAX/MIN)
 
 ## License
 
