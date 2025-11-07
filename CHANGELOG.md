@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BooleanInput for checkbox/boolean values
 - FileInput for file validation (path-based)
 - Capability detection interfaces: HasLengthRange, HasNumericRange, HasOptions, HasCountRange
-- `getParsedValue()` method for automatic type conversion across all inputs
+- `getParsedValue()` method for automatic type conversion across all inputs (returns `null` if value is empty or invalid)
 - `getFilledParsedValue()` method combining filled values with type conversion
 - ErrorMessageFormatter class for converting errors to human-readable strings
 - BasicErrorMessages class providing default Japanese error messages
