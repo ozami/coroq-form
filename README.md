@@ -792,8 +792,21 @@ Forms provide four methods to retrieve values:
 
 - **`getValue()`** - All values as strings (includes empty values)
 - **`getFilledValue()`** - Only non-empty values as strings
-- **`getParsedValue()`** - All values with proper types (int, bool, DateTime, etc.)
+- **`getParsedValue()`** - Values with proper types, or `null` if empty/invalid
 - **`getFilledParsedValue()`** - Only non-empty values with proper types
+
+### getParsedValue() Contract
+
+**`getParsedValue()` returns `null` if the value is empty or invalid, otherwise returns the value converted to its appropriate type.**
+
+This applies to all form items:
+- **Empty values** always return `null` (not empty strings)
+- **Invalid values** return `null` (e.g., malformed email, out-of-range integer)
+- **Valid values** return the appropriate PHP type (int, float, bool, DateTime, string, array)
+
+**Special cases:**
+- `BooleanInput::getParsedValue()` always returns `bool` (never `null`) - unchecked = `false`, checked = `true`
+- `MultiSelect::getParsedValue()` always returns `array` (never `null`) - empty selection = `[]`
 
 ```php
 use Coroq\Form\Form;
@@ -832,11 +845,11 @@ $form->getValue();
 $form->getFilledValue();
 // ['email' => 'user@example.com', 'age' => '25', 'newsletter' => 'on']
 
-// getParsedValue() - proper types, includes empty
+// getParsedValue() - proper types, null for empty/invalid
 $form->getParsedValue();
-// ['email' => 'user@example.com', 'age' => 25, 'newsletter' => true, 'notes' => '']
+// ['email' => 'user@example.com', 'age' => 25, 'newsletter' => true, 'notes' => null]
 
-// getFilledParsedValue() - proper types, excludes empty
+// getFilledParsedValue() - proper types, excludes empty/null
 $form->getFilledParsedValue();
 // ['email' => 'user@example.com', 'age' => 25, 'newsletter' => true]
 ```
@@ -1741,8 +1754,8 @@ $input = new TextInput();
 
 // Values
 $input->setValue(mixed $value);
-$value = $input->getValue();              // Raw value
-$parsed = $input->getParsedValue();       // Parsed value (int, bool, DateTime, etc.)
+$value = $input->getValue();              // Raw value (string)
+$parsed = $input->getParsedValue();       // Parsed value (int, bool, DateTime, etc.) or null if empty/invalid
 $input->clear();
 
 // Validation

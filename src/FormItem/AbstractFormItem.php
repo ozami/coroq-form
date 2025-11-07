@@ -98,10 +98,14 @@ abstract class AbstractFormItem implements FormItemInterface {
 
   /**
    * Get parsed value
-   * Default implementation returns getValue()
+   * Returns null if the value is empty or invalid, otherwise returns the value converted to a suitable type.
+   * Default implementation returns null when empty, getValue() otherwise.
    * Override in subclasses for type conversion (int, bool, DateTime, etc.)
    */
   public function getParsedValue(): mixed {
+    if ($this->isEmpty()) {
+      return null;
+    }
     return $this->getValue();
   }
 }

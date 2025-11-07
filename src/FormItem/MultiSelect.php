@@ -67,4 +67,11 @@ class MultiSelect extends Input implements HasOptionsInterface, HasCountRangeInt
     }
     return parent::doValidate($value);
   }
+
+  /**
+   * @return array
+   */
+  public function getParsedValue(): array {
+    return $this->getValue();
+  }
 }
