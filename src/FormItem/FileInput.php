@@ -31,7 +31,7 @@ class FileInput extends Input {
   /**
    * Set maximum file size in bytes
    */
-  public function setMaxSize(int $bytes): self {
+  public function setMaxSize(int $bytes): static {
     $this->maxSize = $bytes;
     return $this;
   }
@@ -43,7 +43,7 @@ class FileInput extends Input {
   /**
    * Set minimum file size in bytes
    */
-  public function setMinSize(int $bytes): self {
+  public function setMinSize(int $bytes): static {
     $this->minSize = $bytes;
     return $this;
   }
@@ -55,7 +55,7 @@ class FileInput extends Input {
   /**
    * Set allowed MIME types (e.g., ['image/jpeg', 'image/png', 'application/pdf'])
    */
-  public function setAllowedMimeTypes(array $types): self {
+  public function setAllowedMimeTypes(array $types): static {
     $this->allowedMimeTypes = $types;
     return $this;
   }
@@ -67,7 +67,7 @@ class FileInput extends Input {
   /**
    * Set allowed file extensions (e.g., ['jpg', 'png', 'pdf'])
    */
-  public function setAllowedExtensions(array $extensions): self {
+  public function setAllowedExtensions(array $extensions): static {
     $this->allowedExtensions = $extensions;
     return $this;
   }

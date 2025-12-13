@@ -25,14 +25,14 @@ class MultiSelect extends Input implements HasOptionsInterface, HasCountRangeInt
 
   /**
    * @param mixed $value
-   * @return self
+   * @return static
    */
-  public function setValue($value): self {
+  public function setValue($value): static {
     $value = array_values(array_diff((array)$value, ["", null]));
     return parent::setValue($value);
   }
 
-  public function clear(): self {
+  public function clear(): static {
     return $this->setValue([]);
   }
 

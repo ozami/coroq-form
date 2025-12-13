@@ -80,9 +80,9 @@ trait FormItemCollectionTrait {
   /**
    * Clear all items (set to empty)
    *
-   * @return self
+   * @return static
    */
-  public function clear(): self {
+  public function clear(): static {
     foreach ($this->getItems() as $item) {
       $item->clear();
     }

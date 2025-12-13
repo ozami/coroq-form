@@ -28,7 +28,7 @@ trait NumericRangeTrait {
    * Override this method in concrete classes for additional validation,
    * then call setMinValue() to set the actual value
    */
-  public function setMin(int|float|string $min): self {
+  public function setMin(int|float|string $min): static {
     $this->min = (string)$min;
     return $this;
   }
@@ -46,7 +46,7 @@ trait NumericRangeTrait {
    * Override this method in concrete classes for additional validation,
    * then call setMaxValue() to set the actual value
    */
-  public function setMax(int|float|string $max): self {
+  public function setMax(int|float|string $max): static {
     $this->max = (string)$max;
     return $this;
   }

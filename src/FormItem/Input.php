@@ -33,9 +33,9 @@ class Input extends AbstractFormItem {
    * Set the value (applies filtering and clears errors)
    *
    * @param mixed $value The value to set
-   * @return self
+   * @return static
    */
-  public function setValue(mixed $value): self {
+  public function setValue(mixed $value): static {
     if ($this->isReadOnly()) {
       return $this;
     }
@@ -56,9 +56,9 @@ class Input extends AbstractFormItem {
   /**
    * Clear the value (set to empty string)
    *
-   * @return self
+   * @return static
    */
-  public function clear(): self {
+  public function clear(): static {
     $this->setValue("");
     return $this;
   }
@@ -72,9 +72,9 @@ class Input extends AbstractFormItem {
    * For reusable validation logic, consider creating a proper subclass instead.
    *
    * @param callable|null $validator Function signature: fn(FormItemInterface $formItem, mixed $value): ?Error
-   * @return self
+   * @return static
    */
-  public function setValidator(?callable $validator): self {
+  public function setValidator(?callable $validator): static {
     $this->validator = $validator;
     return $this;
   }

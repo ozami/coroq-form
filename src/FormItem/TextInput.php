@@ -41,27 +41,27 @@ class TextInput extends Input implements HasLengthRangeInterface {
 
   /**
    * @param string|null $mb
-   * @return $this
+   * @return static
    */
-  public function setMb(?string $mb): self {
+  public function setMb(?string $mb): static {
     $this->mb = $mb;
     return $this;
   }
 
   /**
    * @param int|null $case
-   * @return $this
+   * @return static
    */
-  public function setCase(?int $case): self {
+  public function setCase(?int $case): static {
     $this->case = $case;
     return $this;
   }
 
   /**
    * @param bool $multiline
-   * @return $this
+   * @return static
    */
-  public function setMultiline(bool $multiline): self {
+  public function setMultiline(bool $multiline): static {
     $this->multiline = $multiline;
     return $this;
   }
@@ -81,54 +81,54 @@ class TextInput extends Input implements HasLengthRangeInterface {
    * If you want to preserve newlines, don't enable this option.
    *
    * @param bool $noWhitespace
-   * @return $this
+   * @return static
    */
-  public function setNoWhitespace(bool $noWhitespace): self {
+  public function setNoWhitespace(bool $noWhitespace): static {
     $this->noWhitespace = $noWhitespace;
     return $this;
   }
 
   /**
    * @param bool $noControl
-   * @return $this
+   * @return static
    */
-  public function setNoControl(bool $noControl): self {
+  public function setNoControl(bool $noControl): static {
     $this->noControl = $noControl;
     return $this;
   }
 
   /**
    * @param string|null $eol
-   * @return $this
+   * @return static
    */
-  public function setEol(?string $eol): self {
+  public function setEol(?string $eol): static {
     $this->eol = $eol;
     return $this;
   }
 
   /**
    * @param string|null $trim
-   * @return $this
+   * @return static
    */
-  public function setTrim(?string $trim): self {
+  public function setTrim(?string $trim): static {
     $this->trim = $trim;
     return $this;
   }
 
   /**
    * @param string|null $pattern
-   * @return $this
+   * @return static
    */
-  public function setPattern(?string $pattern): self {
+  public function setPattern(?string $pattern): static {
     $this->pattern = $pattern;
     return $this;
   }
 
   /**
    * @param string|null $form Unicode normalization form (NFC|NFD|NFKC|NFKD) or null to disable
-   * @return $this
+   * @return static
    */
-  public function setUnicodeNormalization(?string $form): self {
+  public function setUnicodeNormalization(?string $form): static {
     if ($form !== null && !in_array($form, [
       UnicodeNormalization::NFC,
       UnicodeNormalization::NFD,

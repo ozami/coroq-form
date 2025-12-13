@@ -33,7 +33,7 @@ abstract class AbstractFormItem implements FormItemInterface {
   }
 
   /** Set disabled state */
-  public function setDisabled(bool $disabled): self {
+  public function setDisabled(bool $disabled): static {
     $this->disabled = $disabled;
     return $this;
   }
@@ -44,7 +44,7 @@ abstract class AbstractFormItem implements FormItemInterface {
   }
 
   /** Set required state (default is true) */
-  public function setRequired(bool $required): self {
+  public function setRequired(bool $required): static {
     $this->required = $required;
     return $this;
   }
@@ -55,7 +55,7 @@ abstract class AbstractFormItem implements FormItemInterface {
   }
 
   /** Set read-only state */
-  public function setReadOnly(bool $readOnly): self {
+  public function setReadOnly(bool $readOnly): static {
     $this->readOnly = $readOnly;
     return $this;
   }
@@ -66,7 +66,7 @@ abstract class AbstractFormItem implements FormItemInterface {
   }
 
   /** Set the human-readable label */
-  public function setLabel(string $label): self {
+  public function setLabel(string $label): static {
     $this->label = $label;
     return $this;
   }
@@ -77,7 +77,7 @@ abstract class AbstractFormItem implements FormItemInterface {
   }
 
   /** Set the validation error */
-  public function setError(?Error $error): self {
+  public function setError(?Error $error): static {
     if ($error !== null && $this->errorCustomizer !== null) {
       $error = ($this->errorCustomizer)($error, $this);
     }
@@ -86,7 +86,7 @@ abstract class AbstractFormItem implements FormItemInterface {
   }
 
   /** Set error customizer closure */
-  public function setErrorCustomizer(?\Closure $customizer): self {
+  public function setErrorCustomizer(?\Closure $customizer): static {
     $this->errorCustomizer = $customizer;
     return $this;
   }

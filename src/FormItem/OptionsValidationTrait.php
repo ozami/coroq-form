@@ -16,7 +16,7 @@ trait OptionsValidationTrait {
     return $this->options;
   }
 
-  public function setOptions(array $options): self {
+  public function setOptions(array $options): static {
     $this->options = $options;
     return $this;
   }

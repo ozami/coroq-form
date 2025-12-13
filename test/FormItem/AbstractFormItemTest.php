@@ -11,12 +11,12 @@ class AbstractFormItemTestClass extends AbstractFormItem {
     return $this->value;
   }
 
-  public function setValue(mixed $value): self {
+  public function setValue(mixed $value): static {
     $this->value = $value;
     return $this;
   }
 
-  public function clear(): self {
+  public function clear(): static {
     $this->value = '';
     return $this;
   }

@@ -19,7 +19,7 @@ trait CountRangeTrait {
     return $this->minCount;
   }
 
-  public function setMinCount(int $minCount): self {
+  public function setMinCount(int $minCount): static {
     $this->minCount = $minCount;
     return $this;
   }
@@ -28,7 +28,7 @@ trait CountRangeTrait {
     return $this->maxCount;
   }
 
-  public function setMaxCount(int $maxCount): self {
+  public function setMaxCount(int $maxCount): static {
     $this->maxCount = $maxCount;
     return $this;
   }

@@ -19,7 +19,7 @@ trait LengthRangeTrait {
     return $this->minLength;
   }
 
-  public function setMinLength(int $minLength): self {
+  public function setMinLength(int $minLength): static {
     $this->minLength = $minLength;
     return $this;
   }
@@ -28,7 +28,7 @@ trait LengthRangeTrait {
     return $this->maxLength;
   }
 
-  public function setMaxLength(int $maxLength): self {
+  public function setMaxLength(int $maxLength): static {
     $this->maxLength = $maxLength;
     return $this;
   }

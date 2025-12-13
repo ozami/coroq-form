@@ -79,7 +79,7 @@ class Derived extends AbstractFormItem {
   /**
    * No-op - Derived items are always readonly
    */
-  public function setReadOnly(bool $readOnly): self {
+  public function setReadOnly(bool $readOnly): static {
     return $this;
   }
 
@@ -89,9 +89,9 @@ class Derived extends AbstractFormItem {
    * Calculator receives source values as separate arguments.
    *
    * @param Closure $valueCalculator Function that receives source values and returns calculated value
-   * @return $this
+   * @return static
    */
-  public function setValueCalculator(Closure $valueCalculator): self {
+  public function setValueCalculator(Closure $valueCalculator): static {
     $this->valueCalculator = $valueCalculator;
     return $this;
   }
@@ -103,9 +103,9 @@ class Derived extends AbstractFormItem {
    * Returns Error object if invalid, null if valid.
    *
    * @param Closure $validator Validation function
-   * @return $this
+   * @return static
    */
-  public function setValidator(Closure $validator): self {
+  public function setValidator(Closure $validator): static {
     $this->validator = $validator;
     return $this;
   }
@@ -113,9 +113,9 @@ class Derived extends AbstractFormItem {
   /**
    * Add source item this item depends on
    *
-   * @return $this
+   * @return static
    */
-  public function addSource(FormItemInterface $source): self {
+  public function addSource(FormItemInterface $source): static {
     $this->sources[] = $source;
     return $this;
   }
@@ -146,7 +146,7 @@ class Derived extends AbstractFormItem {
   /**
    * No-op - Derived values cannot be set directly
    */
-  public function setValue(mixed $value): self {
+  public function setValue(mixed $value): static {
     return $this;
   }
 
@@ -160,7 +160,7 @@ class Derived extends AbstractFormItem {
   /**
    * Clear error (no value to clear)
    */
-  public function clear(): self {
+  public function clear(): static {
     $this->setError(null);
     return $this;
   }

@@ -30,9 +30,9 @@ class Form implements FormInterface {
    * Set values from an array
    *
    * @param mixed $value Associative array of values
-   * @return self
+   * @return static
    */
-  public function setValue(mixed $value): self {
+  public function setValue(mixed $value): static {
     if ($this->__readonly) {
       return $this;
     }
@@ -46,7 +46,7 @@ class Form implements FormInterface {
     return $this->__disabled;
   }
 
-  public function setDisabled(bool $disabled): self {
+  public function setDisabled(bool $disabled): static {
     $this->__disabled = boolval($disabled);
     return $this;
   }
@@ -55,7 +55,7 @@ class Form implements FormInterface {
     return $this->__required;
   }
 
-  public function setRequired(bool $required): self {
+  public function setRequired(bool $required): static {
     $this->__required = $required;
     return $this;
   }
@@ -64,7 +64,7 @@ class Form implements FormInterface {
     return $this->__readonly;
   }
 
-  public function setReadOnly(bool $readOnly): self {
+  public function setReadOnly(bool $readOnly): static {
     $this->__readonly = $readOnly;
     return $this;
   }
@@ -73,7 +73,7 @@ class Form implements FormInterface {
     return $this->__label;
   }
 
-  public function setLabel(string $label): self {
+  public function setLabel(string $label): static {
     $this->__label = $label;
     return $this;
   }

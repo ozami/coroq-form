@@ -12,9 +12,9 @@ class Select extends Input implements HasOptionsInterface {
 
   /**
    * @param array $options
-   * @return self
+   * @return static
    */
-  public function setOptions(array $options): self {
+  public function setOptions(array $options): static {
     $this->options = [];
     foreach ($options as $value => $label) {
       $this->options["$value"] = $label;

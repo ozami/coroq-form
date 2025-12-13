@@ -19,9 +19,9 @@ class EmailInput extends Input {
 
   /**
    * @param bool $lowercaseDomain
-   * @return $this
+   * @return static
    */
-  public function setLowerCaseDomain(bool $lowercaseDomain = true): self {
+  public function setLowerCaseDomain(bool $lowercaseDomain = true): static {
     $this->lowercaseDomain = $lowercaseDomain;
     return $this;
   }

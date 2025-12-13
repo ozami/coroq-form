@@ -29,7 +29,7 @@ class FormItemCollectionTraitTestClass implements FormInterface {
     return $this->items[$name] ?? null;
   }
 
-  public function setValue(mixed $value): self {
+  public function setValue(mixed $value): static {
     if ($this->readonly) {
       return $this;
     }
@@ -43,7 +43,7 @@ class FormItemCollectionTraitTestClass implements FormInterface {
     return $this->disabled;
   }
 
-  public function setDisabled(bool $disabled): self {
+  public function setDisabled(bool $disabled): static {
     $this->disabled = $disabled;
     return $this;
   }
@@ -52,7 +52,7 @@ class FormItemCollectionTraitTestClass implements FormInterface {
     return $this->required;
   }
 
-  public function setRequired(bool $required): self {
+  public function setRequired(bool $required): static {
     $this->required = $required;
     return $this;
   }
@@ -61,7 +61,7 @@ class FormItemCollectionTraitTestClass implements FormInterface {
     return $this->readonly;
   }
 
-  public function setReadOnly(bool $readOnly): self {
+  public function setReadOnly(bool $readOnly): static {
     $this->readonly = $readOnly;
     return $this;
   }
@@ -70,7 +70,7 @@ class FormItemCollectionTraitTestClass implements FormInterface {
     return $this->label;
   }
 
-  public function setLabel(string $label): self {
+  public function setLabel(string $label): static {
     $this->label = $label;
     return $this;
   }
