@@ -62,7 +62,7 @@ class RepeatingForm extends AbstractFormItem implements FormInterface {
    * @return static
    */
   public function setValue(mixed $value): static {
-    if ($this->isReadOnly()) {
+    if ($this->isDisabled() || $this->isReadOnly()) {
       return $this;
     }
 

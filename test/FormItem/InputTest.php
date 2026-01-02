@@ -216,4 +216,17 @@ class InputTest extends TestCase {
     $this->assertEquals('', $value);
     $this->assertTrue($input->isEmpty());
   }
+
+  public function testDisabledInputIgnoresSetValue() {
+    $input = new Input();
+    $input->setValue('original');
+    $input->setDisabled(true);
+
+    // setValue should be ignored when disabled
+    $input->setValue('new value');
+
+    // Re-enable to check original value is preserved
+    $input->setDisabled(false);
+    $this->assertEquals('original', $input->getValue());
+  }
 }

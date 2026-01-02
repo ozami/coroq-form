@@ -38,7 +38,7 @@ class Form implements FormInterface {
    * @return static
    */
   public function setValue(mixed $value): static {
-    if ($this->__readonly) {
+    if ($this->__disabled || $this->__readonly) {
       return $this;
     }
     foreach ($this->getEnabledItems() as $name => $item) {

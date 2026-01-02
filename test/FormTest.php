@@ -411,4 +411,18 @@ class FormTest extends TestCase {
     $this->assertEquals(['name' => 'John', 'email' => 'john@example.com'], $form->getValue());
     $this->assertFalse($form->isEmpty());
   }
+
+  public function testDisabledFormIgnoresSetValue() {
+    $form = new Form();
+    $form->name = new Input();
+    $form->setValue(['name' => 'original']);
+    $form->setDisabled(true);
+
+    // setValue should be ignored when disabled
+    $form->setValue(['name' => 'new value']);
+
+    // Re-enable to check original value is preserved
+    $form->setDisabled(false);
+    $this->assertEquals(['name' => 'original'], $form->getValue());
+  }
 }
