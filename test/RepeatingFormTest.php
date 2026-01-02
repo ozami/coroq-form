@@ -197,15 +197,19 @@ class RepeatingFormTest extends TestCase {
     $this->assertEquals(['a@example.com'], $repeating->getValue());
   }
 
-  public function testDisabledRepeatingFormStillReturnsValues() {
-    // Disabled state is used by parent forms to filter children
-    // The form itself doesn't filter when disabled
+  public function testDisabledRepeatingFormReturnsEmptyAndRestoresOnReEnable() {
     $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
     $repeating->setValue(['a@example.com', 'b@example.com']);
     $repeating->setDisabled(true);
 
-    // Still returns values (same behavior as Form)
+    // Disabled items return empty value
+    $this->assertEquals([], $repeating->getValue());
+    $this->assertTrue($repeating->isEmpty());
+
+    // Value is preserved and restored when re-enabled
+    $repeating->setDisabled(false);
     $this->assertEquals(['a@example.com', 'b@example.com'], $repeating->getValue());
+    $this->assertFalse($repeating->isEmpty());
   }
 
   public function testDisabledRepeatingFormFilteredByParent() {

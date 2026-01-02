@@ -9,6 +9,8 @@ use Coroq\Form\Error\EmptyError;
  *
  * Provides core functionality for value storage, filtering, and validation.
  * Subclasses override filter() and doValidate() to implement specific input types.
+ *
+ * Empty value: "" (empty string)
  */
 class Input extends AbstractFormItem {
   /** @var mixed The current value */
@@ -23,9 +25,14 @@ class Input extends AbstractFormItem {
   /**
    * Get the current value
    *
-   * @return mixed The filtered value
+   * Returns empty string when disabled.
+   *
+   * @return mixed The filtered value, or empty string if disabled
    */
   public function getValue(): mixed {
+    if ($this->isDisabled()) {
+      return "";
+    }
     return $this->value;
   }
 

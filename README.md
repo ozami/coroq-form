@@ -264,13 +264,17 @@ echo $form->field->getValue();  // "fixed"
 
 ### Disabled
 
-**Input level:**
-- Excluded from `getValue()` - not in returned array
-- Excluded from `setValue()` - value is not set
-- Excluded from `validate()` - not validated
+Disabled items behave as if they temporarily don't exist.
 
-**Form level:**
-- Excluded from parent form's `getValue()`, `setValue()`, and `validate()`
+**Item behavior when disabled:**
+- `getValue()` returns the item's empty value (see each class for definition)
+- `isEmpty()` returns `true`
+- `setValue()` is ignored
+- `validate()` is skipped
+- The stored value is preserved internally and restored when re-enabled
+
+**Parent form behavior:**
+- Disabled child items are excluded from parent's `getValue()`, `setValue()`, and `validate()`
 - Useful for conditionally hiding entire form sections
 
 ```php
@@ -339,15 +343,15 @@ $values = $form->getValue();
 
 | State | setValue() | getValue() | validate() |
 |-------|------------|------------|------------|
-| Normal (required=true) | ✓ Sets value | ✓ Included | ✓ Validated, must not be empty |
-| Optional (required=false) | ✓ Sets value | ✓ Included | ✓ Validated, empty allowed |
-| Read-only | ✗ Ignored | ✓ Included | ✓ Validated |
-| Disabled | ✗ Ignored | ✗ Excluded | ✗ Skipped |
+| Normal (required=true) | ✓ Sets value | ✓ Returns value | ✓ Validated, must not be empty |
+| Optional (required=false) | ✓ Sets value | ✓ Returns value | ✓ Validated, empty allowed |
+| Read-only | ✗ Ignored | ✓ Returns value | ✓ Validated |
+| Disabled | ✗ Ignored | Returns empty value | ✗ Skipped |
 
 **Form-level states apply to the form as a whole:**
 - Required=false on Form: Empty form passes validation
 - ReadOnly on Form: setValue() ignored for entire form
-- Disabled on Form: Entire form excluded from parent's getValue/setValue/validate
+- Disabled on Form: Returns empty value; excluded from parent's getValue/setValue/validate
 
 ## Validation
 

@@ -266,4 +266,32 @@ class DerivedTest extends TestCase {
     $derived->clear();
     $this->assertNull($derived->getError());
   }
+
+  public function testDisabledDerivedReturnsNull() {
+    $input = (new Input())->setValue('test');
+    $derived = (new Derived())
+      ->setValueCalculator(fn($val) => strtoupper($val))
+      ->addSource($input);
+
+    $this->assertEquals('TEST', $derived->getValue());
+    $this->assertFalse($derived->isEmpty());
+
+    $derived->setDisabled(true);
+
+    $this->assertNull($derived->getValue());
+    $this->assertTrue($derived->isEmpty());
+  }
+
+  public function testDisabledDerivedPreservesCalculationForReEnable() {
+    $input = (new Input())->setValue('test');
+    $derived = (new Derived())
+      ->setValueCalculator(fn($val) => strtoupper($val))
+      ->addSource($input);
+
+    $derived->setDisabled(true);
+    $this->assertNull($derived->getValue());
+
+    $derived->setDisabled(false);
+    $this->assertEquals('TEST', $derived->getValue());
+  }
 }

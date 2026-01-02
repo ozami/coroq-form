@@ -78,4 +78,31 @@ class BooleanInputTest extends TestCase {
 
     $this->assertSame($input->getBoolean(), $input->getParsedValue());
   }
+
+  public function testDisabledBooleanInputReturnsEmpty() {
+    $input = new BooleanInput();
+    $input->setValue('on');
+
+    $this->assertEquals('on', $input->getValue());
+    $this->assertTrue($input->getBoolean());
+    $this->assertFalse($input->isEmpty());
+
+    $input->setDisabled(true);
+
+    $this->assertEquals('', $input->getValue());
+    $this->assertFalse($input->getBoolean());
+    $this->assertTrue($input->isEmpty());
+    $this->assertFalse($input->getParsedValue());
+  }
+
+  public function testDisabledBooleanInputPreservesValueForReEnable() {
+    $input = (new BooleanInput())
+      ->setValue('on')
+      ->setDisabled(true);
+
+    $this->assertFalse($input->getBoolean());
+
+    $input->setDisabled(false);
+    $this->assertTrue($input->getBoolean());
+  }
 }

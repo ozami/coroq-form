@@ -17,6 +17,11 @@ use Coroq\Form\FormItem\FormItemInterface;
  *   $form->name = new TextInput();
  *   $form->address = new Form();
  *   $form->address->street = new TextInput();
+ *
+ * Empty value: array keyed by enabled item names with each item's empty value.
+ * Example: ['name' => '', 'email' => ''].
+ * When the form itself is disabled, all items are treated as disabled,
+ * so the empty value becomes an empty array [].
  */
 class Form implements FormInterface {
   use FormItemCollectionTrait;

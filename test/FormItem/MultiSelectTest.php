@@ -405,4 +405,30 @@ class MultiSelectTest extends TestCase {
     $this->assertInstanceOf(NotInOptionsError::class, $input->getError());
     $this->assertFalse($validatorCalled);
   }
+
+  public function testDisabledMultiSelectReturnsEmptyArray() {
+    $input = (new MultiSelect())
+      ->setOptions(['a' => 'A', 'b' => 'B'])
+      ->setValue(['a', 'b']);
+
+    $this->assertEquals(['a', 'b'], $input->getValue());
+    $this->assertFalse($input->isEmpty());
+
+    $input->setDisabled(true);
+
+    $this->assertEquals([], $input->getValue());
+    $this->assertTrue($input->isEmpty());
+  }
+
+  public function testDisabledMultiSelectPreservesValueForReEnable() {
+    $input = (new MultiSelect())
+      ->setOptions(['a' => 'A', 'b' => 'B'])
+      ->setValue(['a', 'b'])
+      ->setDisabled(true);
+
+    $this->assertEquals([], $input->getValue());
+
+    $input->setDisabled(false);
+    $this->assertEquals(['a', 'b'], $input->getValue());
+  }
 }

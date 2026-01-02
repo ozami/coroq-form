@@ -182,4 +182,38 @@ class InputTest extends TestCase {
     $this->assertInstanceOf(EmptyError::class, $input->getError());
     $this->assertFalse($validatorCalled);
   }
+
+  public function testDisabledInputReturnsEmptyValue() {
+    $input = new Input();
+    $input->setValue('test');
+    $input->setDisabled(true);
+
+    $this->assertEquals('', $input->getValue());
+    $this->assertTrue($input->isEmpty());
+  }
+
+  public function testDisabledInputPreservesValueForReEnable() {
+    $input = new Input();
+    $input->setDisabled(false);
+    $input->setValue('test');
+    $input->setDisabled(true);
+
+    // Disabled: returns empty
+    $this->assertEquals('', $input->getValue());
+    $this->assertTrue($input->isEmpty());
+
+    // Re-enabled: value is restored
+    $input->setDisabled(false);
+    $this->assertEquals('test', $input->getValue());
+    $this->assertFalse($input->isEmpty());
+  }
+
+  public function testDisabledInputChainedOperations() {
+    // User's specific scenario
+    $input = new Input();
+    $value = $input->setDisabled(false)->setValue('test')->setDisabled(true)->getValue();
+
+    $this->assertEquals('', $value);
+    $this->assertTrue($input->isEmpty());
+  }
 }

@@ -380,4 +380,35 @@ class FormTest extends TestCase {
 
     $this->assertFalse($form->isDisabled());
   }
+
+  public function testDisabledFormReturnsEmptyValue() {
+    $form = new Form();
+    $form->name = new Input();
+    $form->email = new Input();
+    $form->setValue(['name' => 'John', 'email' => 'john@example.com']);
+    $form->setDisabled(true);
+
+    $this->assertEquals([], $form->getValue());
+    $this->assertEquals([], $form->getParsedValue());
+    $this->assertEquals([], $form->getFilledValue());
+    $this->assertEquals([], $form->getFilledParsedValue());
+    $this->assertTrue($form->isEmpty());
+  }
+
+  public function testDisabledFormPreservesValueForReEnable() {
+    $form = new Form();
+    $form->name = new Input();
+    $form->email = new Input();
+    $form->setValue(['name' => 'John', 'email' => 'john@example.com']);
+    $form->setDisabled(true);
+
+    // Disabled: returns empty
+    $this->assertEquals([], $form->getValue());
+    $this->assertTrue($form->isEmpty());
+
+    // Re-enabled: values restored
+    $form->setDisabled(false);
+    $this->assertEquals(['name' => 'John', 'email' => 'john@example.com'], $form->getValue());
+    $this->assertFalse($form->isEmpty());
+  }
 }

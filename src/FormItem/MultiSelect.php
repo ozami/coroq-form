@@ -6,6 +6,8 @@ use Coroq\Form\Error\Error;
 
 /**
  * Multi-selection input with count constraints
+ *
+ * Empty value: [] (empty array)
  */
 class MultiSelect extends Input implements HasOptionsInterface, HasCountRangeInterface {
   use OptionsValidationTrait;

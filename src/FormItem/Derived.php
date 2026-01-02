@@ -52,9 +52,8 @@ use Coroq\Form\Error\SourceItemInvalidError;
  *   ->addSource($form->first)
  *   ->addSource($form->last);
  * ```
- */
-/**
- * Computed field derived from other form inputs
+ *
+ * Empty value: null
  */
 class Derived extends AbstractFormItem {
   /** @var array<FormItemInterface> */
@@ -123,13 +122,17 @@ class Derived extends AbstractFormItem {
   /**
    * Get calculated value
    *
-   * Returns null if no value calculator is set.
+   * Returns null if disabled or no value calculator is set.
    * Otherwise calculates and returns the value from source values.
    *
    * Note: Does not validate sources. The calculator receives raw values
    * (which may be invalid) and must handle them appropriately.
    */
   public function getValue(): mixed {
+    if ($this->isDisabled()) {
+      return null;
+    }
+
     if (!$this->valueCalculator) {
       return null;
     }

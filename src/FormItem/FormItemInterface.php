@@ -9,7 +9,12 @@ namespace Coroq\Form\FormItem;
  * Implemented by Input (and its subclasses) and Form classes.
  */
 interface FormItemInterface {
-  /** Get the raw value */
+  /**
+   * Get the current value
+   *
+   * When disabled, returns the implementation-defined empty value.
+   * The stored value is preserved internally and restored when re-enabled.
+   */
   public function getValue(): mixed;
 
   /** Get the parsed/typed value (e.g., int for IntegerInput, DateTime for DateInput) */

@@ -150,9 +150,14 @@ trait FormItemCollectionTrait {
   /**
    * Get enabled items (non-disabled)
    *
+   * Returns empty array when the form item collection itself is disabled.
+   *
    * @return array<FormItemInterface>
    */
   protected function getEnabledItems(): array {
+    if ($this->isDisabled()) {
+      return [];
+    }
     $enabledItems = [];
     foreach ($this->getItems() as $index => $item) {
       if (!$item->isDisabled()) {
