@@ -20,24 +20,16 @@ class TextInput extends Input implements HasLengthRangeInterface {
   const RIGHT = "right";
   const BOTH = "both";
 
-  /** @var string|null */
-  protected $mb = null;
-  /** @var string|null */
-  protected $case = null;
-  /** @var bool */
-  protected $multiline = false;
-  /** @var bool */
-  protected $noWhitespace = false;
-  /** @var bool */
-  protected $noControl = true;
-  /** @var string|null */
-  protected $eol = "\n"; // used only when $multiline is true. set null for no conversion
-  /** @var string|null */
-  protected $trim = self::BOTH;
-  /** @var string|null */
-  protected $pattern = null;
-  /** @var string|null */
-  protected $unicodeNormalization = UnicodeNormalization::NFC;
+  protected ?string $mb = null;
+  protected ?int $case = null;
+  protected bool $multiline = false;
+  protected bool $noWhitespace = false;
+  protected bool $noControl = true;
+  /** used only when $multiline is true. set null for no conversion */
+  protected ?string $eol = "\n";
+  protected ?string $trim = self::BOTH;
+  protected ?string $pattern = null;
+  protected ?string $unicodeNormalization = UnicodeNormalization::NFC;
 
   /**
    * @param string|null $mb

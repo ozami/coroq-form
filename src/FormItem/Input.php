@@ -5,7 +5,7 @@ use Coroq\Form\Error\Error;
 use Coroq\Form\Error\EmptyError;
 
 /**
- * Base class for all form input types
+ * Base class for string-based input types
  *
  * Provides core functionality for value storage, filtering, and validation.
  * Subclasses override filter() and doValidate() to implement specific input types.

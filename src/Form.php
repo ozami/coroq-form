@@ -52,7 +52,7 @@ class Form implements FormInterface {
   }
 
   public function setDisabled(bool $disabled): static {
-    $this->__disabled = boolval($disabled);
+    $this->__disabled = $disabled;
     return $this;
   }
 
