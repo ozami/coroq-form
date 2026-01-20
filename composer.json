@@ -1,7 +1,16 @@
 {
     "name": "coroq/form",
+    "description": "Type-safe PHP form validation library with filtering, nested forms, and typed error objects. Zero dependencies.",
     "type": "library",
     "license": "MIT",
+    "keywords": [
+        "form",
+        "validation",
+        "input",
+        "filter",
+        "type-safe",
+        "nested-form"
+    ],
     "authors": [
         {
             "name": "Ozawa Masayuki",
