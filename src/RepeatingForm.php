@@ -22,8 +22,7 @@ use Coroq\Form\FormItem\FormItemInterface;
  *
  * Empty value: array indexed by enabled item indices with each item's empty value.
  * Example: ['', ''] for two empty EmailInputs.
- * When the form itself is disabled, all items are treated as disabled,
- * so the empty value becomes an empty array [].
+ * When the form itself is disabled, getValue() returns an empty array [].
  */
 class RepeatingForm extends AbstractFormItem implements FormInterface {
   use FormItemCollectionTrait;
@@ -62,7 +61,7 @@ class RepeatingForm extends AbstractFormItem implements FormInterface {
    * @return static
    */
   public function setValue(mixed $value): static {
-    if ($this->isDisabled() || $this->isReadOnly()) {
+    if ($this->isReadOnly()) {
       return $this;
     }
 

@@ -5,7 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0] - TBD
+## [3.0.4] - 2026-02-22
+
+### Fixed
+- Disabled items now accept `setValue()` — fixes conditional disable/enable patterns where items failed to receive values after being re-enabled across multiple `setValue()` calls. Only `setReadOnly()` prevents value changes.
+
+## [3.0.3] - 2026-01-20
+
+### Changed
+- Update composer.json
+
+## [3.0.2] - 2026-01-02
+
+### Fixed
+- Form items should ignore `setValue()` when disabled
+- `getValue()` should return empty value when disabled
+
+## [3.0.1] - 2025-12-13
+
+### Changed
+- Change return type of setters of form items
+
+## [3.0.0] - 2025-11-21
 
 ### Changed
 - **BREAKING:** Minimum PHP version is now 8.0 (was 7.2)

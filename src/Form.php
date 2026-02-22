@@ -20,8 +20,7 @@ use Coroq\Form\FormItem\FormItemInterface;
  *
  * Empty value: array keyed by enabled item names with each item's empty value.
  * Example: ['name' => '', 'email' => ''].
- * When the form itself is disabled, all items are treated as disabled,
- * so the empty value becomes an empty array [].
+ * When the form itself is disabled, getValue() returns an empty array [].
  */
 class Form implements FormInterface {
   use FormItemCollectionTrait;
@@ -38,10 +37,10 @@ class Form implements FormInterface {
    * @return static
    */
   public function setValue(mixed $value): static {
-    if ($this->__disabled || $this->__readonly) {
+    if ($this->__readonly) {
       return $this;
     }
-    foreach ($this->getEnabledItems() as $name => $item) {
+    foreach ($this->getItems() as $name => $item) {
       $item->setValue($value[$name] ?? null);
     }
     return $this;

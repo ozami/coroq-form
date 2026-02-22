@@ -13,7 +13,6 @@ interface FormItemInterface {
    * Get the current value
    *
    * When disabled, returns the implementation-defined empty value.
-   * The stored value is preserved internally and restored when re-enabled.
    */
   public function getValue(): mixed;
 
@@ -32,7 +31,7 @@ interface FormItemInterface {
   /** Check if this item is disabled */
   public function isDisabled(): bool;
 
-  /** Set disabled state (disabled items are excluded from validation and getValue) */
+  /** Set disabled state (disabled items are excluded from getValue and validation) */
   public function setDisabled(bool $disabled): static;
 
   /** Check if this item is required */

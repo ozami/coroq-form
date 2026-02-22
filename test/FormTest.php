@@ -412,17 +412,52 @@ class FormTest extends TestCase {
     $this->assertFalse($form->isEmpty());
   }
 
-  public function testDisabledFormIgnoresSetValue() {
+  public function testDisabledFormAcceptsSetValue() {
     $form = new Form();
     $form->name = new Input();
     $form->setValue(['name' => 'original']);
     $form->setDisabled(true);
 
-    // setValue should be ignored when disabled
+    // setValue should be accepted even when disabled
     $form->setValue(['name' => 'new value']);
 
-    // Re-enable to check original value is preserved
+    // Re-enable to check new value is stored
     $form->setDisabled(false);
-    $this->assertEquals(['name' => 'original'], $form->getValue());
+    $this->assertEquals(['name' => 'new value'], $form->getValue());
+  }
+
+  public function testConditionallyDisabledItemReceivesValueAfterReEnable() {
+    // A form where text2 is conditionally disabled based on text1
+    $form = new class extends Form {
+      public readonly Input $text1;
+      public readonly Input $text2;
+
+      public function __construct() {
+        $this->text1 = new Input();
+        $this->text2 = new Input();
+      }
+
+      public function setValue(mixed $value): static {
+        parent::setValue($value);
+        // text2 is enabled only when text1 is not empty
+        $this->text2->setDisabled($this->text1->isEmpty());
+        return $this;
+      }
+    };
+
+    // Step 1: Both filled — text2 should be enabled and have value
+    $form->setValue(['text1' => 'abc', 'text2' => 'def']);
+    $this->assertSame('abc', $form->text1->getValue());
+    $this->assertSame('def', $form->text2->getValue());
+
+    // Step 2: text1 empty — text2 should be disabled (muted)
+    $form->setValue(['text1' => '', 'text2' => 'def2']);
+    $this->assertSame('', $form->text1->getValue());
+    $this->assertSame('', $form->text2->getValue()); // disabled returns empty
+
+    // Step 3: Both filled again — text2 should receive the new value
+    $form->setValue(['text1' => 'abc3', 'text2' => 'def3']);
+    $this->assertSame('abc3', $form->text1->getValue());
+    $this->assertSame('def3', $form->text2->getValue()); // THIS FAILS currently
   }
 }

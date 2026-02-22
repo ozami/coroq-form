@@ -212,17 +212,17 @@ class RepeatingFormTest extends TestCase {
     $this->assertFalse($repeating->isEmpty());
   }
 
-  public function testDisabledRepeatingFormIgnoresSetValue() {
+  public function testDisabledRepeatingFormAcceptsSetValue() {
     $repeating = (new RepeatingForm())->setFactory(fn(int $i) => new EmailInput());
     $repeating->setValue(['a@example.com', 'b@example.com']);
     $repeating->setDisabled(true);
 
-    // setValue should be ignored when disabled
+    // setValue should be accepted even when disabled
     $repeating->setValue(['new@example.com']);
 
-    // Re-enable to check original value is preserved
+    // Re-enable to check new value is stored
     $repeating->setDisabled(false);
-    $this->assertEquals(['a@example.com', 'b@example.com'], $repeating->getValue());
+    $this->assertEquals(['new@example.com'], $repeating->getValue());
   }
 
   public function testDisabledRepeatingFormFilteredByParent() {

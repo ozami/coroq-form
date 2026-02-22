@@ -264,17 +264,16 @@ echo $form->field->getValue();  // "fixed"
 
 ### Disabled
 
-Disabled items behave as if they temporarily don't exist.
+Disabled items are excluded from output and validation, but still accept values.
 
 **Item behavior when disabled:**
 - `getValue()` returns the item's empty value (see each class for definition)
 - `isEmpty()` returns `true`
-- `setValue()` is ignored
+- `setValue()` accepts and stores the value
 - `validate()` is skipped
-- The stored value is preserved internally and restored when re-enabled
 
 **Parent form behavior:**
-- Disabled child items are excluded from parent's `getValue()`, `setValue()`, and `validate()`
+- Disabled child items are excluded from parent's `getValue()` and `validate()`
 - Useful for conditionally hiding entire form sections
 
 ```php
@@ -295,12 +294,12 @@ class OrderForm extends Form {
 $form = new OrderForm();
 $form->setValue([
     'customerName' => 'Taro',
-    'legacyField' => 'ignored'
+    'legacyField' => 'some value'
 ]);
 
 $values = $form->getValue();
 // ['customerName' => 'Taro']
-// legacyField is completely ignored
+// legacyField is excluded from getValue()
 ```
 
 **Form-level example:**
@@ -331,12 +330,12 @@ $form->disableShipping();
 $form->setValue([
     'name' => 'Taro',
     'billing' => ['street' => '1-1-1', 'city' => 'Tokyo'],
-    'shipping' => ['street' => '2-2-2', 'city' => 'Osaka']  // Ignored!
+    'shipping' => ['street' => '2-2-2', 'city' => 'Osaka']
 ]);
 
 $values = $form->getValue();
 // ['name' => 'Taro', 'billing' => ['street' => '1-1-1', 'city' => 'Tokyo']]
-// shipping is completely excluded
+// shipping is excluded from getValue()
 ```
 
 ### State Summary
@@ -346,12 +345,12 @@ $values = $form->getValue();
 | Normal (required=true) | ✓ Sets value | ✓ Returns value | ✓ Validated, must not be empty |
 | Optional (required=false) | ✓ Sets value | ✓ Returns value | ✓ Validated, empty allowed |
 | Read-only | ✗ Ignored | ✓ Returns value | ✓ Validated |
-| Disabled | ✗ Ignored | Returns empty value | ✗ Skipped |
+| Disabled | ✓ Sets value | Returns empty value | ✗ Skipped |
 
 **Form-level states apply to the form as a whole:**
 - Required=false on Form: Empty form passes validation
 - ReadOnly on Form: setValue() ignored for entire form
-- Disabled on Form: Returns empty value; excluded from parent's getValue/setValue/validate
+- Disabled on Form: Returns empty value; excluded from parent's getValue/validate
 
 ## Validation
 

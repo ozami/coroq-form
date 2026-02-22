@@ -43,7 +43,7 @@ class Input extends AbstractFormItem {
    * @return static
    */
   public function setValue(mixed $value): static {
-    if ($this->isDisabled() || $this->isReadOnly()) {
+    if ($this->isReadOnly()) {
       return $this;
     }
     $this->value = $this->filter($value);
